@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Pharma Claims Analytics — Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Hero section                                                         -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2.5rem;">
+  <h1 style="font-size: 2rem; font-weight: 700; color: #1a2744; margin-bottom: 0.5rem;">
+    Pharma Claims Analytics
+  </h1>
+  <p style="color: #6b7280; font-size: 1.05rem;">
+    Automated reporting pipeline for pharmaceutical claims data
+  </p>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- KPI cards                                                            -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 3rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">
+    Key Performance Indicators
+  </h2>
+  <div class="grid-3">
+
+    <!-- Total Claims -->
+    <div class="card" style="border-left: 4px solid #1a2744;">
+      <p style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.06em; color: #6b7280; margin-bottom: 0.4rem;">
+        Total Claims
+      </p>
+      <p style="font-size: 2.2rem; font-weight: 700; color: #1a2744; line-height: 1.1;">
+        {{ total_claims if total_claims != "N/A" else total_claims }}
+      </p>
+      <p style="font-size: 0.82rem; color: #9ca3af; margin-top: 0.3rem;">
+        All claims in the database
+      </p>
+    </div>
+
+    <!-- Paid Claims -->
+    <div class="card" style="border-left: 4px solid #16a34a;">
+      <p style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.06em; color: #6b7280; margin-bottom: 0.4rem;">
+        Paid Claims
+      </p>
+      <p style="font-size: 2.2rem; font-weight: 700; color: #16a34a; line-height: 1.1;">
+        {{ paid_claims }}
+      </p>
+      <p style="font-size: 0.82rem; color: #9ca3af; margin-top: 0.3rem;">
+        Claims with status "Paid"
+      </p>
+    </div>
+
+    <!-- Total Gross Cost -->
+    <div class="card" style="border-left: 4px solid #d97706;">
+      <p style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.06em; color: #6b7280; margin-bottom: 0.4rem;">
+        Total Gross Cost
+      </p>
+      <p style="font-size: 2.2rem; font-weight: 700; color: #d97706; line-height: 1.1;
+                word-break: break-all;">
+        {{ total_gross_cost }}
+      </p>
+      <p style="font-size: 0.82rem; color: #9ca3af; margin-top: 0.3rem;">
+        Sum of gross cost for paid claims
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Report cards                                                         -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 3rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 1rem;">
+    Generate Reports
+  </h2>
+  <div class="grid-3">
+
+    <!-- Claims Utilization -->
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; color: #1a2744; margin-bottom: 0.5rem;">
+        Claims Utilization
+      </h3>
+      <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem; line-height: 1.5;">
+        Summarises claim volume, paid rates, monthly trends, and full claim-level
+        detail across all plan members.
+      </p>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <a href="/claims" class="btn btn-primary">View Dashboard</a>
+        <a href="/download/claims" class="btn btn-success">Download Excel</a>
+      </div>
+    </div>
+
+    <!-- Drug Cost -->
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; color: #1a2744; margin-bottom: 0.5rem;">
+        Drug Cost Analysis
+      </h3>
+      <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem; line-height: 1.5;">
+        Breaks down brand vs. generic spend, top-10 drugs by cost, and therapeutic
+        class expenditure for paid claims.
+      </p>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <a href="/drugs" class="btn btn-primary">View Dashboard</a>
+        <a href="/download/drugs" class="btn btn-success">Download Excel</a>
+      </div>
+    </div>
+
+    <!-- Formulary Compliance -->
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; color: #1a2744; margin-bottom: 0.5rem;">
+        Formulary Compliance
+      </h3>
+      <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem; line-height: 1.5;">
+        Analyses formulary tier distribution, generic fill rate, and on-formulary
+        compliance across paid claims.
+      </p>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <a href="/formulary" class="btn btn-primary">View Dashboard</a>
+        <a href="/download/formulary" class="btn btn-success">Download Excel</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Interactive dashboards teaser                                        -->
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <h2 style="font-size: 1.25rem; font-weight: 600; color: #374151; margin-bottom: 0.75rem;">
+    Interactive Dashboards
+  </h2>
+  <div class="card" style="color: #6b7280; font-size: 0.9rem; line-height: 1.7;">
+    <p>
+      Each report section hosts an interactive Plotly dashboard with drill-down
+      filters, trend charts, and cost breakdowns.  Use the navigation links above
+      or the <strong>View Dashboard</strong> buttons to explore the data directly
+      in your browser — no spreadsheet required.
+    </p>
+  </div>
+</section>
+
+{% endblock %}

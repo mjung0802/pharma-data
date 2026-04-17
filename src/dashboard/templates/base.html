@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Pharma Claims Analytics{% endblock %}</title>
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Reset & base                                                         */
+    /* ------------------------------------------------------------------ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #1f2937;
+      background: #f9fafb;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Navigation                                                           */
+    /* ------------------------------------------------------------------ */
+    .navbar {
+      background-color: #1a2744;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar__brand {
+      color: #ffffff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .navbar__links {
+      display: flex;
+      gap: 0.25rem;
+      list-style: none;
+    }
+
+    .navbar__links a {
+      color: #c9d6f0;
+      text-decoration: none;
+      padding: 0.4rem 0.9rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .navbar__links a:hover,
+    .navbar__links a:focus {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .navbar__links a.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Layout wrapper                                                       */
+    /* ------------------------------------------------------------------ */
+    .page-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Footer                                                              */
+    /* ------------------------------------------------------------------ */
+    footer {
+      background: #1a2744;
+      color: #8fa3c8;
+      text-align: center;
+      font-size: 0.82rem;
+      padding: 1rem;
+      margin-top: 3rem;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Utility classes                                                     */
+    /* ------------------------------------------------------------------ */
+    .btn {
+      display: inline-block;
+      padding: 0.45rem 1.1rem;
+      border-radius: 5px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: #1a2744;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #243560;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #1a2744;
+      border: 2px solid #1a2744;
+    }
+
+    .btn-outline:hover {
+      background: #1a2744;
+      color: #ffffff;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: #ffffff;
+    }
+
+    .btn-success:hover {
+      background: #15803d;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Card */
+    .card {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem;
+    }
+
+    /* Grid helpers */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/" class="navbar__brand">Pharma Claims Analytics</a>
+    <ul class="navbar__links">
+      <li><a href="/">Dashboard</a></li>
+      <li><a href="/claims">Claims</a></li>
+      <li><a href="/drugs">Drugs</a></li>
+      <li><a href="/formulary">Formulary</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main content -->
+  <main class="page-wrapper">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Pharma Claims Analytics Portfolio</p>
+  </footer>
+
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
