@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -m src.reports.excel.generate --report formulary)",
-      "Bash(echo \"Exit code: $?\")",
-      "Bash(python *)"
-    ]
-  }
-}
