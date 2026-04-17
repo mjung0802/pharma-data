@@ -34,22 +34,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # Map report names to builder functions and display names
-    builders: Dict[str, Tuple[Callable[[], str], str]] = {
-        "claims": (None, "Claims Utilization"),  # Will be set below
-        "drugs": (None, "Drug Cost"),
-        "formulary": (None, "Formulary Compliance"),
-    }
-
     # Import the builder functions
     try:
         from src.reports.excel.claims_utilization import build_claims_report
         from src.reports.excel.drug_cost import build_drug_report
         from src.reports.excel.formulary_compliance import build_formulary_report
-
-        builders["claims"] = (build_claims_report, "Claims Utilization")
-        builders["drugs"] = (build_drug_report, "Drug Cost")
-        builders["formulary"] = (build_formulary_report, "Formulary Compliance")
     except ImportError as e:
         print(f"Error: Could not import report builders: {e}", file=sys.stderr)
         print(
@@ -57,6 +46,13 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Map report names to builder functions and display names
+    builders: Dict[str, Tuple[Callable[[], str], str]] = {
+        "claims": (build_claims_report, "Claims Utilization"),
+        "drugs": (build_drug_report, "Drug Cost"),
+        "formulary": (build_formulary_report, "Formulary Compliance"),
+    }
 
     # Determine which reports to run
     if args.report == "all":
@@ -77,7 +73,7 @@ def main() -> int:
             print(f"  → Saved: {output_path}")
             succeeded += 1
         except Exception as e:
-            print(f"  Error: {e}")
+            print(f"  Error: {e}", file=sys.stderr)
             failed += 1
 
     # Print summary
