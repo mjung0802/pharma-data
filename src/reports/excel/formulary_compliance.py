@@ -2,7 +2,7 @@
 Phase 3d placeholder: Formulary Compliance Excel Report Builder.
 Full implementation in Phase 3d.
 """
-from src.config import OUTPUT_DIR
+from src.config import OUTPUT_DIR  # noqa: F401
 
 
 def build_formulary_report() -> str:

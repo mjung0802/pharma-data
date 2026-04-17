@@ -2,7 +2,7 @@
 Phase 3c placeholder: Drug Cost Excel Report Builder.
 Full implementation in Phase 3c.
 """
-from src.config import OUTPUT_DIR
+from src.config import OUTPUT_DIR  # noqa: F401
 
 
 def build_drug_report() -> str:

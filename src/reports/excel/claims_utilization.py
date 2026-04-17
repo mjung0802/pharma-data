@@ -15,11 +15,11 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, Reference
+from openpyxl.cell import Cell
 from openpyxl.styles import (
     Alignment,
     Font,
     PatternFill,
-    numbers,
 )
 from openpyxl.utils import get_column_letter
 
@@ -57,7 +57,7 @@ def _set_col_widths(ws, widths: list[int]) -> None:
         ws.column_dimensions[get_column_letter(i)].width = w
 
 
-def _bold_cell(ws, row: int, col: int, value, size: int = 11) -> None:
+def _bold_cell(ws, row: int, col: int, value, size: int = 11) -> Cell:
     cell = ws.cell(row=row, column=col, value=value)
     cell.font = Font(bold=True, size=size)
     return cell
@@ -81,7 +81,6 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     # Run queries
     df_status = run_query(queries["status_summary"])
     df_monthly = run_query(queries["monthly_trend"])
-    df_plan = run_query(queries["plan_breakdown"])  # noqa: F841 (available for future use)
 
     # ---- Derived KPIs -------------------------------------------------------
     paid_rate = float(df_status["paid_rate"].iloc[0])
@@ -118,16 +117,18 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     _header_row(ws, row, ["Metric", "Value"])
     row += 1
 
-    kpis = [
-        ("Overall Paid Rate", f"{paid_rate}%"),
-        ("Total Claims", total_claims),
-        ("Paid Claims", paid_claims),
-        ("Total Gross Cost", f"${total_gross:,.2f}"),
-        ("Total Paid (Plan)", f"${total_paid_plan:,.2f}"),
+    kpis: list[tuple[str, object, str | None]] = [
+        ("Overall Paid Rate", paid_rate, '0.00"%"'),
+        ("Total Claims", total_claims, None),
+        ("Paid Claims", paid_claims, None),
+        ("Total Gross Cost", total_gross, '"$"#,##0.00'),
+        ("Total Paid (Plan)", total_paid_plan, '"$"#,##0.00'),
     ]
-    for metric, value in kpis:
+    for metric, value, fmt in kpis:
         ws.cell(row=row, column=1, value=metric)
-        ws.cell(row=row, column=2, value=value)
+        cell = ws.cell(row=row, column=2, value=value)
+        if fmt is not None:
+            cell.number_format = fmt
         row += 1
 
     # Blank separator
@@ -139,7 +140,6 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
 
     status_headers = ["Claim Status", "Count", "Total Paid", "Paid Rate (%)"]
     _header_row(ws, row, status_headers)
-    status_header_row = row
     row += 1
 
     red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
@@ -156,8 +156,6 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
             for col in range(1, 5):
                 ws.cell(row=row, column=col).fill = red_fill
         row += 1
-
-    _ = status_header_row  # referenced above; kept for clarity
 
     # Blank separator
     row += 1
@@ -228,8 +226,8 @@ def _build_detail(wb: Workbook) -> None:
             elif col_name in cost_cols:
                 cell.number_format = currency_fmt
 
-    # AutoFilter on header row
-    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+    # AutoFilter covering header + all data rows
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{len(df) + 1}"
 
     # Freeze top row
     ws.freeze_panes = "A2"
