@@ -7,10 +7,11 @@ and renders the claims.html template.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from flask import Blueprint, render_template
+
+from src.reports.excel._utils import _load_queries
 
 claims_bp = Blueprint("claims", __name__)
 
@@ -19,38 +20,28 @@ _SQL_FILE = (
 )
 
 
-def _load_queries(sql_file: Path) -> dict[str, str]:
-    """Parse a SQL file into a dict of {query_name: sql_body}."""
-    sql_text = sql_file.read_text(encoding="utf-8")
-    sections = sql_text.split("-- QUERY:")
-    queries: dict[str, str] = {}
-    for section in sections[1:]:
-        lines = section.strip().splitlines()
-        name = lines[0].strip()
-        body = "\n".join(lines[1:]).strip()
-        queries[name] = body
-    return queries
-
-
 @claims_bp.route("/claims")
 def claims():
-    # Import inside function to avoid circular imports at module load time
-    from src.ingestion import run_query
+    try:
+        # Import inside function to avoid circular imports at module load time
+        from src.ingestion import run_query
+        from flask import current_app
 
-    queries = _load_queries(_SQL_FILE)
+        queries = _load_queries(_SQL_FILE)
 
-    df_status = run_query(queries["status_summary"])
-    df_monthly = run_query(queries["monthly_trend"])
-    df_plan = run_query(queries["plan_breakdown"])
+        df_status = run_query(queries["status_summary"])
+        df_monthly = run_query(queries["monthly_trend"])
+        df_plan = run_query(queries["plan_breakdown"])
 
-    # ------------------------------------------------------------------
-    # KPI values
-    # ------------------------------------------------------------------
-    paid_rate = float(df_status["paid_rate"].iloc[0])
-    total_claims = int(df_status["claim_count"].sum())
-    paid_claims = int(
-        df_status.loc[df_status["claim_status"] == "Paid", "claim_count"].sum()
-    )
+        # ------------------------------------------------------------------
+        # KPI values
+        # ------------------------------------------------------------------
+        paid_rate_series = df_status["paid_rate"].dropna()
+        paid_rate = float(paid_rate_series.iloc[0]) if not paid_rate_series.empty else 0.0
+        total_claims = int(df_monthly["claim_count"].sum())
+        paid_claims = int(
+            df_status.loc[df_status["claim_status"] == "Paid", "claim_count"].sum()
+        )
 
     # ------------------------------------------------------------------
     # Chart 1 — Monthly Claim Trend (line chart)
@@ -118,14 +109,15 @@ def claims():
         },
     }
 
-    chart1_json = json.dumps(chart1)
-    chart2_json = json.dumps(chart2)
-
-    return render_template(
-        "claims.html",
-        paid_rate=paid_rate,
-        total_claims=f"{total_claims:,}",
-        paid_claims=f"{paid_claims:,}",
-        chart1_json=chart1_json,
-        chart2_json=chart2_json,
-    )
+        return render_template(
+            "claims.html",
+            paid_rate=paid_rate,
+            total_claims=f"{total_claims:,}",
+            paid_claims=f"{paid_claims:,}",
+            chart1_json=chart1,
+            chart2_json=chart2,
+        )
+    except Exception:
+        from flask import current_app
+        current_app.logger.exception("Claims dashboard failed")
+        return "Dashboard temporarily unavailable. Check server logs.", 500

@@ -88,7 +88,9 @@
 
 {% block scripts %}
 <script>
-  Plotly.newPlot('chart1', JSON.parse('{{ chart1_json | tojson }}'), {responsive: true});
-  Plotly.newPlot('chart2', JSON.parse('{{ chart2_json | tojson }}'), {responsive: true});
+  var chart1 = {{ chart1_json | tojson }};
+  var chart2 = {{ chart2_json | tojson }};
+  Plotly.newPlot('chart1', chart1.data, chart1.layout, {responsive: true});
+  Plotly.newPlot('chart2', chart2.data, chart2.layout, {responsive: true});
 </script>
 {% endblock %}
