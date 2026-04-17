@@ -1,0 +1,128 @@
+{# ----------------------------------------------------------------------- #}
+{# _filter_bar.html — reusable filter bar partial                          #}
+{#                                                                          #}
+{# Expects these template variables from the route:                         #}
+{#   plan_filter  — currently selected plan name, or ""                    #}
+{#   date_from    — YYYY-MM-DD or ""                                        #}
+{#   date_to      — YYYY-MM-DD or ""                                        #}
+{#   drug_type    — "Brand", "Generic", or ""                              #}
+{# ----------------------------------------------------------------------- #}
+
+<section style="margin-bottom: 2rem;">
+  <div class="card" style="
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+  ">
+    <form method="GET" action="{{ request.path }}"
+          style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem;">
+
+      <!-- Plan selector -->
+      <div style="display: flex; flex-direction: column; gap: 0.25rem; min-width: 180px;">
+        <label for="plan" style="font-size: 0.75rem; font-weight: 600;
+               text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280;">
+          Plan
+        </label>
+        <select id="plan" name="plan" style="
+          padding: 0.45rem 0.65rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.375rem;
+          font-size: 0.9rem;
+          background: #ffffff;
+          color: #111827;
+        ">
+          <option value=""{% if not plan_filter %} selected{% endif %}>All Plans</option>
+          <option value="AZ BlueCross PPO"{% if plan_filter == "AZ BlueCross PPO" %} selected{% endif %}>AZ BlueCross PPO</option>
+          <option value="UnitedHealth Select HMO"{% if plan_filter == "UnitedHealth Select HMO" %} selected{% endif %}>UnitedHealth Select HMO</option>
+          <option value="Aetna Advantage POS"{% if plan_filter == "Aetna Advantage POS" %} selected{% endif %}>Aetna Advantage POS</option>
+          <option value="Cigna Connect EPO"{% if plan_filter == "Cigna Connect EPO" %} selected{% endif %}>Cigna Connect EPO</option>
+        </select>
+      </div>
+
+      <!-- Date From -->
+      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+        <label for="date_from" style="font-size: 0.75rem; font-weight: 600;
+               text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280;">
+          Date From
+        </label>
+        <input id="date_from" type="date" name="date_from"
+               value="{{ date_from }}"
+               min="2024-01-01" max="2024-12-31"
+               style="
+                 padding: 0.45rem 0.65rem;
+                 border: 1px solid #d1d5db;
+                 border-radius: 0.375rem;
+                 font-size: 0.9rem;
+                 background: #ffffff;
+                 color: #111827;
+               ">
+      </div>
+
+      <!-- Date To -->
+      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+        <label for="date_to" style="font-size: 0.75rem; font-weight: 600;
+               text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280;">
+          Date To
+        </label>
+        <input id="date_to" type="date" name="date_to"
+               value="{{ date_to }}"
+               min="2024-01-01" max="2024-12-31"
+               style="
+                 padding: 0.45rem 0.65rem;
+                 border: 1px solid #d1d5db;
+                 border-radius: 0.375rem;
+                 font-size: 0.9rem;
+                 background: #ffffff;
+                 color: #111827;
+               ">
+      </div>
+
+      <!-- Drug Type toggle -->
+      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+        <label for="drug_type" style="font-size: 0.75rem; font-weight: 600;
+               text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280;">
+          Drug Type
+        </label>
+        <select id="drug_type" name="drug_type" style="
+          padding: 0.45rem 0.65rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.375rem;
+          font-size: 0.9rem;
+          background: #ffffff;
+          color: #111827;
+        ">
+          <option value=""{% if not drug_type %} selected{% endif %}>All Types</option>
+          <option value="Brand"{% if drug_type == "Brand" %} selected{% endif %}>Brand</option>
+          <option value="Generic"{% if drug_type == "Generic" %} selected{% endif %}>Generic</option>
+        </select>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; align-items: flex-end; gap: 0.5rem; padding-bottom: 1px;">
+        <button type="submit" style="
+          padding: 0.47rem 1rem;
+          background: #1a2744;
+          color: #ffffff;
+          border: none;
+          border-radius: 0.375rem;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+        ">Apply Filters</button>
+
+        <a href="{{ request.path }}" style="
+          padding: 0.47rem 0.85rem;
+          background: #f3f4f6;
+          color: #374151;
+          border: 1px solid #d1d5db;
+          border-radius: 0.375rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+          text-decoration: none;
+          display: inline-block;
+        ">Clear</a>
+      </div>
+
+    </form>
+  </div>
+</section>

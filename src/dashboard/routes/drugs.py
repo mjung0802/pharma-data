@@ -3,15 +3,18 @@ Phase 4c: Drug Cost Analysis dashboard route.
 
 Loads the three drug_cost.sql queries, builds Plotly chart JSON,
 and renders the drugs.html template.
+
+Phase 4e: adds GET-based filter bar (plan, date range, drug type).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 from src.reports.excel._utils import _load_queries
+from src.dashboard.routes._filters import _build_where, _inject_filter
 
 drugs_bp = Blueprint("drugs", __name__)
 
@@ -27,11 +30,26 @@ def drugs():
         from src.ingestion import run_query
         from flask import current_app
 
+        # ------------------------------------------------------------------
+        # Read filter params from query string
+        # ------------------------------------------------------------------
+        plan_filter = request.args.get("plan", "")
+        date_from   = request.args.get("date_from", "")
+        date_to     = request.args.get("date_to", "")
+        drug_type   = request.args.get("drug_type", "")
+
+        extra_where = _build_where(plan_filter, date_from, date_to, drug_type)
+
         queries = _load_queries(_SQL_FILE)
 
-        df_bvg = run_query(queries["brand_vs_generic"])
-        df_top = run_query(queries["top_10_drugs"])
-        df_tc = run_query(queries["therapeutic_class_spend"])
+        # Apply filters to every query
+        q_bvg = _inject_filter(queries["brand_vs_generic"],        extra_where)
+        q_top = _inject_filter(queries["top_10_drugs"],            extra_where)
+        q_tc  = _inject_filter(queries["therapeutic_class_spend"], extra_where)
+
+        df_bvg = run_query(q_bvg)
+        df_top = run_query(q_top)
+        df_tc  = run_query(q_tc)
 
         # ------------------------------------------------------------------
         # KPI values
@@ -140,6 +158,11 @@ def drugs():
             chart1_json=chart1,
             chart2_json=chart2,
             chart3_json=chart3,
+            # Filter state for pre-population
+            plan_filter=plan_filter,
+            date_from=date_from,
+            date_to=date_to,
+            drug_type=drug_type,
         )
     except Exception:
         from flask import current_app

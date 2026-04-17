@@ -3,15 +3,18 @@ Phase 4d: Formulary & Tier Compliance dashboard route.
 
 Loads the four formulary_compliance.sql queries, builds Plotly chart JSON,
 and renders the formulary.html template.
+
+Phase 4e: adds GET-based filter bar (plan, date range, drug type).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 from src.reports.excel._utils import _load_queries
+from src.dashboard.routes._filters import _build_where, _inject_filter
 
 formulary_bp = Blueprint("formulary", __name__)
 
@@ -27,12 +30,28 @@ def formulary():
         from src.ingestion import run_query
         from flask import current_app
 
+        # ------------------------------------------------------------------
+        # Read filter params from query string
+        # ------------------------------------------------------------------
+        plan_filter = request.args.get("plan", "")
+        date_from   = request.args.get("date_from", "")
+        date_to     = request.args.get("date_to", "")
+        drug_type   = request.args.get("drug_type", "")
+
+        extra_where = _build_where(plan_filter, date_from, date_to, drug_type)
+
         queries = _load_queries(_SQL_FILE)
 
-        df_tier = run_query(queries["tier_distribution"])
-        df_gfr = run_query(queries["generic_fill_rate"])
-        df_ofr = run_query(queries["on_formulary_rate"])
-        df_cpt = run_query(queries["cost_per_tier"])
+        # Apply filters to every query
+        q_tier = _inject_filter(queries["tier_distribution"], extra_where)
+        q_gfr  = _inject_filter(queries["generic_fill_rate"], extra_where)
+        q_ofr  = _inject_filter(queries["on_formulary_rate"], extra_where)
+        q_cpt  = _inject_filter(queries["cost_per_tier"],     extra_where)
+
+        df_tier = run_query(q_tier)
+        df_gfr  = run_query(q_gfr)
+        df_ofr  = run_query(q_ofr)
+        df_cpt  = run_query(q_cpt)
 
         # ------------------------------------------------------------------
         # KPI values
@@ -104,8 +123,8 @@ def formulary():
         type_colors = {"Generic": "#2ecc71", "Brand": "#e74c3c"}
 
         chart3_data = []
-        for drug_type in drug_types:
-            subset = df_cpt[df_cpt["drug_type"] == drug_type]
+        for dt in drug_types:
+            subset = df_cpt[df_cpt["drug_type"] == dt]
             tier_x = [str(t) for t in subset["formulary_tier"].tolist()]
             copay_y = subset["avg_member_copay"].tolist()
             chart3_data.append(
@@ -113,8 +132,8 @@ def formulary():
                     "x": tier_x,
                     "y": copay_y,
                     "type": "bar",
-                    "name": drug_type,
-                    "marker": {"color": type_colors.get(drug_type, "#1a2744")},
+                    "name": dt,
+                    "marker": {"color": type_colors.get(dt, "#1a2744")},
                 }
             )
 
@@ -143,6 +162,11 @@ def formulary():
             chart1_json=chart1,
             chart2_json=chart2,
             chart3_json=chart3,
+            # Filter state for pre-population
+            plan_filter=plan_filter,
+            date_from=date_from,
+            date_to=date_to,
+            drug_type=drug_type,
         )
     except Exception:
         from flask import current_app
