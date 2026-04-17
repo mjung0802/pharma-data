@@ -63,7 +63,8 @@ def create_app() -> Flask:
             total_claims = "N/A"
 
         try:
-            paid_claims = f"{int(run_query(\"SELECT COUNT(*) AS n FROM claims WHERE claim_status = 'Paid'\")['n'].iloc[0]):,}"
+            _q = "SELECT COUNT(*) AS n FROM claims WHERE claim_status = 'Paid'"
+            paid_claims = f"{int(run_query(_q)['n'].iloc[0]):,}"
         except Exception:
             app.logger.exception("KPI query failed")
             paid_claims = "N/A"

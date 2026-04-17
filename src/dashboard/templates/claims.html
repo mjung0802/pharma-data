@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Claims Utilization — Pharma Claims Analytics{% endblock %}
+
+{% block content %}
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Page heading                                                         -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.875rem; font-weight: 700; color: #1a2744; margin-bottom: 0.4rem;">
+    Claims Utilization
+  </h1>
+  <p style="color: #6b7280; font-size: 1rem;">
+    Claim volume, status mix, monthly trends, and plan-level breakdown
+  </p>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- KPI strip                                                            -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2.5rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+
+    <!-- Total Claims -->
+    <div class="card" style="border-left: 4px solid #1a2744;">
+      <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.35rem;">
+        Total Claims
+      </p>
+      <p style="font-size: 2rem; font-weight: 700; color: #1a2744; line-height: 1.1;">
+        {{ total_claims }}
+      </p>
+    </div>
+
+    <!-- Paid Claims -->
+    <div class="card" style="border-left: 4px solid #2ecc71;">
+      <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.35rem;">
+        Paid Claims
+      </p>
+      <p style="font-size: 2rem; font-weight: 700; color: #16a34a; line-height: 1.1;">
+        {{ paid_claims }}
+      </p>
+    </div>
+
+    <!-- Paid Rate -->
+    <div class="card" style="border-left: 4px solid #d97706;">
+      <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.35rem;">
+        Paid Rate
+      </p>
+      <p style="font-size: 2rem; font-weight: 700; color: #d97706; line-height: 1.1;">
+        {{ "%.1f"|format(paid_rate) }}%
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Charts                                                               -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2.5rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem;">
+
+    <!-- Chart 1: Monthly Claim Trend -->
+    <div class="card" style="padding: 1rem;">
+      <div id="chart1" style="width: 100%; height: 380px;"></div>
+    </div>
+
+    <!-- Chart 2: Plan Status Breakdown -->
+    <div class="card" style="padding: 1rem;">
+      <div id="chart2" style="width: 100%; height: 380px;"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Download link                                                        -->
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <a href="/download/claims" class="btn btn-success">Download Excel Report</a>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  Plotly.newPlot('chart1', JSON.parse('{{ chart1_json | tojson }}'), {responsive: true});
+  Plotly.newPlot('chart2', JSON.parse('{{ chart2_json | tojson }}'), {responsive: true});
+</script>
+{% endblock %}
