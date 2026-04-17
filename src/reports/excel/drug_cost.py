@@ -15,7 +15,6 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, Reference
-from openpyxl.cell import Cell
 from openpyxl.styles import (
     Alignment,
     Font,
@@ -25,6 +24,12 @@ from openpyxl.utils import get_column_letter
 
 from src.config import OUTPUT_DIR
 from src.ingestion import run_query
+from src.reports.excel._utils import (
+    _bold_cell,
+    _header_row,
+    _load_queries,
+    _set_col_widths,
+)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -32,42 +37,6 @@ from src.ingestion import run_query
 _SQL_FILE = (
     Path(__file__).resolve().parent.parent.parent / "sql" / "drug_cost.sql"
 )
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _load_queries() -> dict[str, str]:
-    """Parse the SQL file into a dict of {query_name: sql_body}."""
-    sql_text = _SQL_FILE.read_text(encoding="utf-8")
-    sections = sql_text.split("-- QUERY:")
-    queries: dict[str, str] = {}
-    for section in sections[1:]:  # skip preamble before first marker
-        lines = section.strip().splitlines()
-        name = lines[0].strip()
-        body = "\n".join(lines[1:]).strip()
-        queries[name] = body
-    return queries
-
-
-def _set_col_widths(ws, widths: list[int]) -> None:
-    """Set column widths for the first len(widths) columns."""
-    for i, w in enumerate(widths, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = w
-
-
-def _bold_cell(ws, row: int, col: int, value, size: int = 11) -> Cell:
-    cell = ws.cell(row=row, column=col, value=value)
-    cell.font = Font(bold=True, size=size)
-    return cell
-
-
-def _header_row(ws, row: int, headers: list[str], bold: bool = True) -> None:
-    for col, header in enumerate(headers, start=1):
-        cell = ws.cell(row=row, column=col, value=header)
-        if bold:
-            cell.font = Font(bold=True)
 
 
 # ---------------------------------------------------------------------------
@@ -308,7 +277,7 @@ def build_drug_report() -> str:
     """Build the Drug Cost Analysis Excel report. Returns the output file path."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    queries = _load_queries()
+    queries = _load_queries(_SQL_FILE)
 
     wb = Workbook()
     # Remove default sheet
