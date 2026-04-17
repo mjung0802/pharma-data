@@ -278,8 +278,7 @@ def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame) -> None:
 
     # Build horizontal bar chart (direction="bar" makes it horizontal)
     chart = BarChart()
-    chart.type = "bar"          # vertical bars in openpyxl terms
-    chart.direction = "bar"     # horizontal orientation
+    chart.type = "bar"   # "bar" = horizontal bars; "col" = vertical columns
     chart.title = "Top 10 Drugs by Gross Cost (Paid Claims)"
     chart.x_axis.title = "Gross Cost"
     chart.y_axis.title = "Drug"
