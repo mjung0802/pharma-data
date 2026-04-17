@@ -19,6 +19,12 @@ TABLES = ("claims", "members", "drugs", "plans", "pharmacies")
 class DataLoader(ABC):
     """Load a named table and return it as a pandas DataFrame."""
 
+    def _validate_table(self, table_name: str) -> None:
+        if table_name not in TABLES:
+            raise ValueError(
+                f"Unknown table '{table_name}'. Valid: {', '.join(sorted(TABLES))}"
+            )
+
     @abstractmethod
     def load(self, table_name: str) -> pd.DataFrame:
         """

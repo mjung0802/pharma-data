@@ -46,11 +46,7 @@ class CSVLoader(DataLoader):
         FileNotFoundError
             If the expected CSV file does not exist under ``DATA_DIR``.
         """
-        if table_name not in _TABLE_FILES:
-            valid = ", ".join(sorted(_TABLE_FILES))
-            raise ValueError(
-                f"Unknown table '{table_name}'. Valid table names are: {valid}"
-            )
+        self._validate_table(table_name)
 
         csv_path = config.DATA_DIR / _TABLE_FILES[table_name]
         return pd.read_csv(csv_path)

@@ -90,7 +90,10 @@ def run_query(sql: str) -> pd.DataFrame:
     0  800
     """
     conn = get_engine()
-    return conn.execute(sql).df()
+    try:
+        return conn.execute(sql).df()
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
