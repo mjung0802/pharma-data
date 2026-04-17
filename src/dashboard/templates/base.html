@@ -160,10 +160,10 @@
   <nav class="navbar">
     <a href="/" class="navbar__brand">Pharma Claims Analytics</a>
     <ul class="navbar__links">
-      <li><a href="/">Dashboard</a></li>
-      <li><a href="/claims">Claims</a></li>
-      <li><a href="/drugs">Drugs</a></li>
-      <li><a href="/formulary">Formulary</a></li>
+      <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
+      <li><a href="/claims" class="{% if request.path == '/claims' %}active{% endif %}">Claims</a></li>
+      <li><a href="/drugs" class="{% if request.path == '/drugs' %}active{% endif %}">Drugs</a></li>
+      <li><a href="/formulary" class="{% if request.path == '/formulary' %}active{% endif %}">Formulary</a></li>
     </ul>
   </nav>
 
@@ -178,7 +178,7 @@
   </footer>
 
   <!-- Plotly.js -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
 
   {% block scripts %}{% endblock %}
 </body>

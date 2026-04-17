@@ -32,7 +32,7 @@
         Total Claims
       </p>
       <p style="font-size: 2.2rem; font-weight: 700; color: #1a2744; line-height: 1.1;">
-        {{ total_claims if total_claims != "N/A" else total_claims }}
+        {{ total_claims }}
       </p>
       <p style="font-size: 0.82rem; color: #9ca3af; margin-top: 0.3rem;">
         All claims in the database
@@ -60,7 +60,7 @@
         Total Gross Cost
       </p>
       <p style="font-size: 2.2rem; font-weight: 700; color: #d97706; line-height: 1.1;
-                word-break: break-all;">
+                overflow-wrap: break-word;">
         {{ total_gross_cost }}
       </p>
       <p style="font-size: 0.82rem; color: #9ca3af; margin-top: 0.3rem;">

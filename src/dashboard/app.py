@@ -9,7 +9,6 @@ Run the dev server:
 
 from __future__ import annotations
 
-import io
 import os
 from pathlib import Path
 
@@ -54,22 +53,19 @@ def create_app() -> Flask:
     # ------------------------------------------------------------------
     @app.route("/")
     def index():
+        # Import here to avoid circular imports at module load time
         from src.ingestion import run_query
 
         try:
-            total_claims = int(
-                run_query("SELECT COUNT(*) AS n FROM claims")["n"].iloc[0]
-            )
+            total_claims = f"{int(run_query('SELECT COUNT(*) AS n FROM claims')['n'].iloc[0]):,}"
         except Exception:
+            app.logger.exception("KPI query failed")
             total_claims = "N/A"
 
         try:
-            paid_claims = int(
-                run_query(
-                    "SELECT COUNT(*) AS n FROM claims WHERE claim_status = 'Paid'"
-                )["n"].iloc[0]
-            )
+            paid_claims = f"{int(run_query(\"SELECT COUNT(*) AS n FROM claims WHERE claim_status = 'Paid'\")['n'].iloc[0]):,}"
         except Exception:
+            app.logger.exception("KPI query failed")
             paid_claims = "N/A"
 
         try:
@@ -79,6 +75,7 @@ def create_app() -> Flask:
             )["total"].iloc[0]
             total_gross_cost = f"${float(raw):,.2f}"
         except Exception:
+            app.logger.exception("KPI query failed")
             total_gross_cost = "N/A"
 
         return render_template(
@@ -99,6 +96,7 @@ def create_app() -> Flask:
             abort(404)
 
         try:
+            # Import here to avoid circular imports at module load time
             if report_name == "claims":
                 from src.reports.excel.claims_utilization import build_claims_report
                 output_path = build_claims_report()
@@ -108,8 +106,9 @@ def create_app() -> Flask:
             else:  # formulary
                 from src.reports.excel.formulary_compliance import build_formulary_report
                 output_path = build_formulary_report()
-        except Exception as exc:
-            return f"Report generation failed: {exc}", 500, {
+        except Exception:
+            app.logger.exception("Report generation failed for %s", report_name)
+            return "Report generation failed. Check server logs.", 500, {
                 "Content-Type": "text/plain"
             }
 
