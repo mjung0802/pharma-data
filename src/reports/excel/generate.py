@@ -70,7 +70,7 @@ def main() -> int:
 
         try:
             output_path = builder_func()
-            print(f"  → Saved: {output_path}")
+            print(f"  -> Saved: {output_path}")
             succeeded += 1
         except Exception as e:
             print(f"  Error: {e}", file=sys.stderr)
