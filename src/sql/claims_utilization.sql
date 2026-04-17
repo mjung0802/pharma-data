@@ -11,9 +11,10 @@
 -- Count and total_paid per claim_status, plus the overall paid_rate
 -- (Paid count / total count * 100) as a global figure on every row.
 --
--- paid_rate is computed via a correlated subquery so it is identical on
--- every row — useful for downstream pivot tables and dashboard KPI cards.
--- Both DuckDB and BigQuery support scalar subqueries in SELECT.
+-- paid_rate is computed via a window function with FILTER so it is identical
+-- on every row — useful for downstream pivot tables and dashboard KPI cards.
+-- Both DuckDB and BigQuery support this standard SQL window function pattern.
+-- NULLIF guards against division by zero if the table is empty.
 WITH status_counts AS (
     SELECT
         claim_status,
@@ -27,9 +28,8 @@ SELECT
     sc.claim_count,
     sc.total_paid,
     ROUND(
-        (SELECT SUM(claim_count) FROM status_counts WHERE claim_status = 'Paid')
-        * 100.0
-        / (SELECT SUM(claim_count) FROM status_counts),
+        SUM(sc.claim_count) FILTER (WHERE sc.claim_status = 'Paid') OVER () * 100.0
+        / NULLIF(SUM(sc.claim_count) OVER (), 0),
         2
     )                                                                    AS paid_rate
 FROM status_counts sc
@@ -38,8 +38,10 @@ ORDER BY sc.claim_count DESC;
 
 -- QUERY: monthly_trend
 -- Month-over-month claim volume, gross cost, and paid amount.
--- DuckDB:     STRFTIME('%Y-%m', CAST(service_date AS DATE))
--- BigQuery:   FORMAT_DATE('%Y-%m', CAST(service_date AS DATE))
+-- NOTE: This query uses DuckDB syntax for local execution.
+-- For BigQuery, replace STRFTIME with FORMAT_DATE:
+--   DuckDB:   STRFTIME('%Y-%m', CAST(service_date AS DATE))
+--   BigQuery: FORMAT_DATE('%Y-%m', CAST(service_date AS DATE))
 SELECT
     STRFTIME('%Y-%m', CAST(service_date AS DATE))                        AS year_month,
     COUNT(*)                                                             AS claim_count,
@@ -60,7 +62,7 @@ SELECT
     SUM(CASE WHEN claim_status = 'Rejected' THEN 1 ELSE 0 END)         AS rejected_count,
     SUM(CASE WHEN claim_status = 'Reversed' THEN 1 ELSE 0 END)         AS reversed_count,
     ROUND(SUM(gross_cost), 2)                                           AS total_gross_cost,
-    ROUND(SUM(plan_paid), 2)                                            AS total_plan_paid,
+    ROUND(SUM(total_paid), 2)                                           AS total_paid,
     ROUND(
         SUM(CASE WHEN claim_status = 'Paid' THEN 1 ELSE 0 END) * 100.0
         / COUNT(*),

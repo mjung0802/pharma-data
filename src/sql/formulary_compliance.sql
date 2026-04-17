@@ -28,6 +28,11 @@ ORDER BY formulary_tier ASC;
 
 -- QUERY: generic_fill_rate
 -- Overall brand vs. generic claim counts and generic fill rate (Paid claims only).
+-- NOTE: The current dataset contains only Tier 1 (generic) and Tier 3 (brand) claims.
+-- Tier 2 is included in the on-formulary definition but produces no rows with this data.
+-- In a production dataset with Tier 2 drugs, on_formulary_rate and generic_fill_rate
+-- would diverge (on_formulary_rate would be higher because Tier 2 brand claims count
+-- as on-formulary but not as generic).
 SELECT
     COUNT(*)                                                             AS total_claims,
     SUM(CASE WHEN drug_type = 'Generic' THEN 1 ELSE 0 END)             AS generic_claims,
@@ -43,6 +48,11 @@ WHERE claim_status = 'Paid';
 
 -- QUERY: on_formulary_rate
 -- Proportion of Paid claims that landed on a preferred (Tier 1 or 2) formulary tier.
+-- NOTE: The current dataset contains only Tier 1 (generic) and Tier 3 (brand) claims.
+-- Tier 2 is included in the on-formulary definition but produces no rows with this data.
+-- In a production dataset with Tier 2 drugs, on_formulary_rate and generic_fill_rate
+-- would diverge (on_formulary_rate would be higher because Tier 2 brand claims count
+-- as on-formulary but not as generic).
 SELECT
     COUNT(*)                                                             AS total_paid_claims,
     SUM(CASE WHEN formulary_tier IN (1, 2) THEN 1 ELSE 0 END)          AS on_formulary_claims,
