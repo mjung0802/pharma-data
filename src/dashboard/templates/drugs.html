@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Drug Cost Analysis — Pharma Claims Analytics{% endblock %}
+
+{% block content %}
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Page heading                                                         -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2rem;">
+  <h1 style="font-size: 1.875rem; font-weight: 700; color: #1a2744; margin-bottom: 0.4rem;">
+    Drug Cost Analysis
+  </h1>
+  <p style="color: #6b7280; font-size: 1rem;">
+    Brand vs. generic spend, top-cost drugs, and therapeutic class breakdown
+  </p>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- KPI strip                                                            -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2.5rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+
+    <!-- Total Paid Drug Cost -->
+    <div class="card" style="border-left: 4px solid #1a2744;">
+      <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.35rem;">
+        Total Paid Drug Cost
+      </p>
+      <p style="font-size: 2rem; font-weight: 700; color: #1a2744; line-height: 1.1;">
+        {{ total_paid_cost }}
+      </p>
+    </div>
+
+    <!-- Top Drug by Cost -->
+    <div class="card" style="border-left: 4px solid #3b82f6;">
+      <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.35rem;">
+        Top Drug by Cost
+      </p>
+      <p style="font-size: 1.5rem; font-weight: 700; color: #1a2744; line-height: 1.2;">
+        {{ top_drug_name }}
+      </p>
+    </div>
+
+    <!-- Top Drug Cost -->
+    <div class="card" style="border-left: 4px solid #d97706;">
+      <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.35rem;">
+        Top Drug Cost
+      </p>
+      <p style="font-size: 2rem; font-weight: 700; color: #d97706; line-height: 1.1;">
+        {{ top_drug_cost }}
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Charts — row 1: Chart 1 and Chart 2 side by side                   -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2.5rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem;">
+
+    <!-- Chart 1: Top 10 Drugs Horizontal Bar -->
+    <div class="card" style="padding: 1rem;">
+      <div id="chart1" style="width: 100%; height: 420px;"></div>
+    </div>
+
+    <!-- Chart 2: Brand vs. Generic Donut -->
+    <div class="card" style="padding: 1rem;">
+      <div id="chart2" style="width: 100%; height: 420px;"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Charts — row 2: Chart 3 full width                                  -->
+<!-- ------------------------------------------------------------------ -->
+<section style="margin-bottom: 2.5rem;">
+  <div class="card" style="padding: 1rem;">
+    <div id="chart3" style="width: 100%; height: 400px;"></div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Download link                                                        -->
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <a href="/download/drugs" class="btn btn-success">Download Excel Report</a>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var chart1 = {{ chart1_json | tojson }};
+  var chart2 = {{ chart2_json | tojson }};
+  var chart3 = {{ chart3_json | tojson }};
+  Plotly.newPlot('chart1', chart1.data, chart1.layout, {responsive: true});
+  Plotly.newPlot('chart2', chart2.data, chart2.layout, {responsive: true});
+  Plotly.newPlot('chart3', chart3.data, chart3.layout, {responsive: true});
+</script>
+{% endblock %}
