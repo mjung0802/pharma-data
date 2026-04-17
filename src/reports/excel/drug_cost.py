@@ -24,6 +24,7 @@ from openpyxl.utils import get_column_letter
 
 from src.config import OUTPUT_DIR
 from src.ingestion import run_query
+from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
     _bold_cell,
     _header_row,
@@ -43,14 +44,14 @@ _SQL_FILE = (
 # Sheet builders
 # ---------------------------------------------------------------------------
 
-def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
+def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "") -> pd.DataFrame:
     """Build the Summary sheet; returns top_10_drugs df for the chart sheet."""
     ws = wb.create_sheet("Summary")
 
-    # Run queries
-    df_brand_generic = run_query(queries["brand_vs_generic"])
-    df_top10 = run_query(queries["top_10_drugs"])
-    df_tc = run_query(queries["therapeutic_class_spend"])
+    # Run queries (apply optional filter from dashboard)
+    df_brand_generic = run_query(_inject_filter(queries["brand_vs_generic"], extra_where))
+    df_top10 = run_query(_inject_filter(queries["top_10_drugs"], extra_where))
+    df_tc = run_query(_inject_filter(queries["therapeutic_class_spend"], extra_where))
 
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -145,6 +146,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     _header_row(ws, row, tc_headers)
     row += 1
 
+    tc_data_start = row
     for _, tcrow in df_tc.iterrows():
         ws.cell(row=row, column=1, value=str(tcrow["therapeutic_class"]))
         ws.cell(row=row, column=2, value=int(tcrow["claim_count"]))
@@ -163,25 +165,43 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
 
         row += 1
 
+    # TOTAL row for Therapeutic Class
+    total_font = Font(bold=True)
+    ws.cell(row=row, column=1, value="TOTAL").font = total_font
+    ws.cell(row=row, column=2,
+            value=f"=SUM(B{tc_data_start}:B{row - 1})").font = total_font
+    tc_gross = ws.cell(row=row, column=3,
+                       value=f"=SUM(C{tc_data_start}:C{row - 1})")
+    tc_gross.font = total_font
+    tc_gross.number_format = '"$"#,##0.00'
+    tc_brand = ws.cell(row=row, column=5,
+                       value=f"=SUM(E{tc_data_start}:E{row - 1})")
+    tc_brand.font = total_font
+    tc_brand.number_format = '"$"#,##0.00'
+    tc_generic = ws.cell(row=row, column=6,
+                         value=f"=SUM(F{tc_data_start}:F{row - 1})")
+    tc_generic.font = total_font
+    tc_generic.number_format = '"$"#,##0.00'
+    row += 1
+
     # Column widths
     _set_col_widths(ws, [24, 24, 14, 22, 12, 16, 16])
 
     return df_top10
 
 
-def _build_detail(wb: Workbook) -> None:
+def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     """Build the Detail sheet with full Paid claim-level data."""
     ws = wb.create_sheet("Detail")
 
-    df = run_query(
-        "SELECT * FROM claims WHERE claim_status = 'Paid' ORDER BY gross_cost DESC"
-    )
+    base_q = "SELECT * FROM claims WHERE claim_status = 'Paid' ORDER BY gross_cost DESC"
+    df = run_query(_inject_filter(base_q, extra_where))
 
     headers = df.columns.tolist()
     _header_row(ws, 1, headers)
 
     date_fmt = "YYYY-MM-DD"
-    currency_fmt = "#,##0.00"
+    currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
 
@@ -273,7 +293,7 @@ def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame) -> None:
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def build_drug_report() -> str:
+def build_drug_report(extra_where: str = "") -> str:
     """Build the Drug Cost Analysis Excel report. Returns the output file path."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -284,10 +304,10 @@ def build_drug_report() -> str:
     wb.remove(wb.active)
 
     # Sheet 1: Summary
-    df_top10 = _build_summary(wb, queries)
+    df_top10 = _build_summary(wb, queries, extra_where)
 
     # Sheet 2: Detail
-    _build_detail(wb)
+    _build_detail(wb, extra_where)
 
     # Sheet 3: Top Drugs Chart
     _build_chart_sheet(wb, df_top10)

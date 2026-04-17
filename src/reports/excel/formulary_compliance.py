@@ -24,6 +24,7 @@ from openpyxl.utils import get_column_letter
 
 from src.config import OUTPUT_DIR
 from src.ingestion import run_query
+from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
     _bold_cell,
     _header_row,
@@ -43,22 +44,15 @@ _SQL_FILE = (
 # Sheet builders
 # ---------------------------------------------------------------------------
 
-def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
+def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "") -> pd.DataFrame:
     """Build the Summary sheet; returns tier_distribution df for the chart sheet."""
     ws = wb.create_sheet("Summary")
 
-    # Run queries
-    df_tier = run_query(queries["tier_distribution"])
-    df_generic = run_query(queries["generic_fill_rate"])
-    df_formulary = run_query(queries["on_formulary_rate"])
-    df_cost_tier = run_query(queries["cost_per_tier"])
-
-    # Extract scalar KPI values
-    generic_fill_rate = float(df_generic["generic_fill_rate"].iloc[0])
-    on_formulary_rate = float(df_formulary["on_formulary_rate"].iloc[0])
-    total_paid_claims = int(df_formulary["total_paid_claims"].iloc[0])
-    generic_claims = int(df_generic["generic_claims"].iloc[0])
-    brand_claims = int(df_generic["brand_claims"].iloc[0])
+    # Run queries (apply optional filter from dashboard)
+    df_tier = run_query(_inject_filter(queries["tier_distribution"], extra_where))
+    df_generic = run_query(_inject_filter(queries["generic_fill_rate"], extra_where))
+    df_formulary = run_query(_inject_filter(queries["on_formulary_rate"], extra_where))
+    df_cost_tier = run_query(_inject_filter(queries["cost_per_tier"], extra_where))
 
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -79,6 +73,8 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     row += 1
 
     # ---- Key Metrics section -------------------------------------------------
+    # Formulas reference the Detail sheet (Paid claims only).
+    # Detail columns: A=claim_id … K=drug_type, M=formulary_tier
     _bold_cell(ws, row, 1, "Key Metrics", size=12)
     row += 1
 
@@ -86,11 +82,18 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     row += 1
 
     kpis: list[tuple[str, object, str | None]] = [
-        ("Generic Fill Rate", generic_fill_rate, '0.00"%"'),
-        ("On-Formulary Rate", on_formulary_rate, '0.00"%"'),
-        ("Total Paid Claims", total_paid_claims, None),
-        ("Generic Claims", generic_claims, None),
-        ("Brand Claims", brand_claims, None),
+        ("Generic Fill Rate",
+         "=IF(COUNTA(Detail!A2:A10000)=0,0,"
+         "COUNTIF(Detail!K2:K10000,\"Generic\")/COUNTA(Detail!A2:A10000)*100)",
+         '0.00"%"'),
+        ("On-Formulary Rate",
+         "=IF(COUNTA(Detail!A2:A10000)=0,0,"
+         "(COUNTIF(Detail!M2:M10000,1)+COUNTIF(Detail!M2:M10000,2))"
+         "/COUNTA(Detail!A2:A10000)*100)",
+         '0.00"%"'),
+        ("Total Paid Claims", "=COUNTA(Detail!A2:A10000)",                  None),
+        ("Generic Claims",    '=COUNTIF(Detail!K2:K10000,"Generic")',        None),
+        ("Brand Claims",      '=COUNTIF(Detail!K2:K10000,"Brand")',          None),
     ]
     for metric, value, fmt in kpis:
         ws.cell(row=row, column=1, value=metric)
@@ -114,6 +117,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
 
     red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
 
+    tier_data_start = row
     for _, trow in df_tier.iterrows():
         tier_val = int(trow["formulary_tier"])
         ws.cell(row=row, column=1, value=tier_val)
@@ -134,6 +138,17 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
                 ws.cell(row=row, column=col).fill = red_fill
 
         row += 1
+
+    # TOTAL row for Tier Distribution
+    total_font = Font(bold=True)
+    ws.cell(row=row, column=1, value="TOTAL").font = total_font
+    ws.cell(row=row, column=2,
+            value=f"=SUM(B{tier_data_start}:B{row - 1})").font = total_font
+    tier_total_cost = ws.cell(row=row, column=3,
+                              value=f"=SUM(C{tier_data_start}:C{row - 1})")
+    tier_total_cost.font = total_font
+    tier_total_cost.number_format = '"$"#,##0.00'
+    row += 1
 
     # Blank separator
     row += 1
@@ -167,19 +182,18 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     return df_tier
 
 
-def _build_detail(wb: Workbook) -> None:
+def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     """Build the Detail sheet with full Paid claim-level data."""
     ws = wb.create_sheet("Detail")
 
-    df = run_query(
-        "SELECT * FROM claims WHERE claim_status = 'Paid' ORDER BY formulary_tier ASC, gross_cost DESC"
-    )
+    base_q = "SELECT * FROM claims WHERE claim_status = 'Paid' ORDER BY formulary_tier ASC, gross_cost DESC"
+    df = run_query(_inject_filter(base_q, extra_where))
 
     headers = df.columns.tolist()
     _header_row(ws, 1, headers)
 
     date_fmt = "YYYY-MM-DD"
-    currency_fmt = "#,##0.00"
+    currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
 
@@ -270,7 +284,7 @@ def _build_chart_sheet(wb: Workbook, df_tier: pd.DataFrame) -> None:
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def build_formulary_report() -> str:
+def build_formulary_report(extra_where: str = "") -> str:
     """Build the Formulary & Tier Compliance Excel report. Returns the output file path."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -281,10 +295,10 @@ def build_formulary_report() -> str:
     wb.remove(wb.active)
 
     # Sheet 1: Summary
-    df_tier = _build_summary(wb, queries)
+    df_tier = _build_summary(wb, queries, extra_where)
 
     # Sheet 2: Detail
-    _build_detail(wb)
+    _build_detail(wb, extra_where)
 
     # Sheet 3: Tier Chart
     _build_chart_sheet(wb, df_tier)

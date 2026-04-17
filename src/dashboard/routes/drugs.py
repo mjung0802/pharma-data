@@ -51,12 +51,18 @@ def drugs():
         df_top = run_query(q_top)
         df_tc  = run_query(q_tc)
 
+        has_data = not df_bvg.empty
+
         # ------------------------------------------------------------------
         # KPI values
         # ------------------------------------------------------------------
         total_paid_cost = float(df_bvg["total_gross_cost"].sum())
-        top_drug_name = str(df_top["brand_name"].iloc[0])
-        top_drug_cost_raw = float(df_top["total_gross_cost"].iloc[0])
+        if df_top.empty:
+            top_drug_name = "No data"
+            top_drug_cost_raw = 0.0
+        else:
+            top_drug_name = str(df_top["brand_name"].iloc[0])
+            top_drug_cost_raw = float(df_top["total_gross_cost"].iloc[0])
         top_drug_cost = f"${top_drug_cost_raw:,.2f}"
 
         # ------------------------------------------------------------------
@@ -155,6 +161,7 @@ def drugs():
             total_paid_cost=f"${total_paid_cost:,.0f}",
             top_drug_name=top_drug_name,
             top_drug_cost=top_drug_cost,
+            has_data=has_data,
             chart1_json=chart1,
             chart2_json=chart2,
             chart3_json=chart3,

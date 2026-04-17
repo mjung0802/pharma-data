@@ -24,6 +24,7 @@ from openpyxl.utils import get_column_letter
 
 from src.config import OUTPUT_DIR
 from src.ingestion import run_query
+from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
     _bold_cell,
     _header_row,
@@ -43,22 +44,13 @@ _SQL_FILE = (
 # Sheet builders
 # ---------------------------------------------------------------------------
 
-def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
+def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "") -> pd.DataFrame:
     """Build the Summary sheet; returns monthly_trend df for the chart sheet."""
     ws = wb.create_sheet("Summary")
 
-    # Run queries
-    df_status = run_query(queries["status_summary"])
-    df_monthly = run_query(queries["monthly_trend"])
-
-    # ---- Derived KPIs -------------------------------------------------------
-    paid_rate = float(df_status["paid_rate"].iloc[0])
-    total_claims = int(df_status["claim_count"].sum())
-    paid_claims = int(
-        df_status.loc[df_status["claim_status"] == "Paid", "claim_count"].sum()
-    )
-    total_gross = float(df_monthly["total_gross_cost"].sum())
-    total_paid_plan = float(df_status["total_paid"].sum())
+    # Run queries (apply optional filter from dashboard)
+    df_status = run_query(_inject_filter(queries["status_summary"], extra_where))
+    df_monthly = run_query(_inject_filter(queries["monthly_trend"], extra_where))
 
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -80,6 +72,8 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     row += 1
 
     # ---- KPI section --------------------------------------------------------
+    # Formulas reference the Detail sheet so any analyst can inspect the logic.
+    # Detail columns: A=claim_id … U=gross_cost, X=total_paid, Y=claim_status
     _bold_cell(ws, row, 1, "Key Metrics", size=12)
     row += 1
 
@@ -87,11 +81,14 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     row += 1
 
     kpis: list[tuple[str, object, str | None]] = [
-        ("Overall Paid Rate", paid_rate, '0.00"%"'),
-        ("Total Claims", total_claims, None),
-        ("Paid Claims", paid_claims, None),
-        ("Total Gross Cost", total_gross, '"$"#,##0.00'),
-        ("Total Paid (Plan)", total_paid_plan, '"$"#,##0.00'),
+        ("Overall Paid Rate",
+         "=IF(COUNTA(Detail!A2:A10000)=0,0,"
+         "COUNTIF(Detail!Y2:Y10000,\"Paid\")/COUNTA(Detail!A2:A10000)*100)",
+         '0.00"%"'),
+        ("Total Claims",    "=COUNTA(Detail!A2:A10000)",                   None),
+        ("Paid Claims",     '=COUNTIF(Detail!Y2:Y10000,"Paid")',            None),
+        ("Total Gross Cost","=SUM(Detail!U2:U10000)",                       '"$"#,##0.00'),
+        ("Total Paid (Plan)","=SUM(Detail!X2:X10000)",                      '"$"#,##0.00'),
     ]
     for metric, value, fmt in kpis:
         ws.cell(row=row, column=1, value=metric)
@@ -113,6 +110,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
 
     red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
 
+    status_data_start = row
     for _, srow in df_status.iterrows():
         ws.cell(row=row, column=1, value=srow["claim_status"])
         ws.cell(row=row, column=2, value=int(srow["claim_count"]))
@@ -126,6 +124,17 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
                 ws.cell(row=row, column=col).fill = red_fill
         row += 1
 
+    # TOTAL row for Status Breakdown
+    total_font = Font(bold=True)
+    ws.cell(row=row, column=1, value="TOTAL").font = total_font
+    ws.cell(row=row, column=2,
+            value=f"=SUM(B{status_data_start}:B{row - 1})").font = total_font
+    total_paid_cell = ws.cell(row=row, column=3,
+                              value=f"=SUM(C{status_data_start}:C{row - 1})")
+    total_paid_cell.font = total_font
+    total_paid_cell.number_format = '#,##0.00'
+    row += 1
+
     # Blank separator
     row += 1
 
@@ -137,6 +146,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
     _header_row(ws, row, trend_headers)
     row += 1
 
+    trend_data_start = row
     for _, mrow in df_monthly.iterrows():
         ws.cell(row=row, column=1, value=str(mrow["year_month"]))
         ws.cell(row=row, column=2, value=int(mrow["claim_count"]))
@@ -147,17 +157,33 @@ def _build_summary(wb: Workbook, queries: dict[str, str]) -> pd.DataFrame:
         ws.cell(row=row, column=5, value=int(mrow["paid_count"]))
         row += 1
 
+    # TOTAL row for Monthly Trend
+    ws.cell(row=row, column=1, value="TOTAL").font = total_font
+    ws.cell(row=row, column=2,
+            value=f"=SUM(B{trend_data_start}:B{row - 1})").font = total_font
+    gross_total = ws.cell(row=row, column=3,
+                          value=f"=SUM(C{trend_data_start}:C{row - 1})")
+    gross_total.font = total_font
+    gross_total.number_format = '#,##0.00'
+    paid_total = ws.cell(row=row, column=4,
+                         value=f"=SUM(D{trend_data_start}:D{row - 1})")
+    paid_total.font = total_font
+    paid_total.number_format = '#,##0.00'
+    ws.cell(row=row, column=5,
+            value=f"=SUM(E{trend_data_start}:E{row - 1})").font = total_font
+    row += 1
+
     # Column widths
     _set_col_widths(ws, [28, 16, 18, 18, 16])
 
     return df_monthly
 
 
-def _build_detail(wb: Workbook) -> None:
+def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     """Build the Detail sheet with full claim-level data."""
     ws = wb.create_sheet("Detail")
 
-    df = run_query("SELECT * FROM claims ORDER BY service_date")
+    df = run_query(_inject_filter("SELECT * FROM claims ORDER BY service_date", extra_where))
 
     # Write header
     headers = df.columns.tolist()
@@ -165,7 +191,7 @@ def _build_detail(wb: Workbook) -> None:
 
     # Date format string
     date_fmt = "YYYY-MM-DD"
-    currency_fmt = '#,##0.00'
+    currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
 
@@ -260,7 +286,7 @@ def _build_chart_sheet(wb: Workbook, df_monthly: pd.DataFrame) -> None:
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def build_claims_report() -> str:
+def build_claims_report(extra_where: str = "") -> str:
     """Build the Claims Utilization Excel report. Returns the output file path."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -271,10 +297,10 @@ def build_claims_report() -> str:
     wb.remove(wb.active)
 
     # Sheet 1: Summary
-    df_monthly = _build_summary(wb, queries)
+    df_monthly = _build_summary(wb, queries, extra_where)
 
     # Sheet 2: Detail
-    _build_detail(wb)
+    _build_detail(wb, extra_where)
 
     # Sheet 3: Monthly Trend Chart
     _build_chart_sheet(wb, df_monthly)

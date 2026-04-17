@@ -51,6 +51,8 @@ def claims():
         df_monthly = run_query(q_monthly)
         df_plan    = run_query(q_plan)
 
+        has_data = not df_monthly.empty
+
         # ------------------------------------------------------------------
         # KPI values
         # ------------------------------------------------------------------
@@ -132,6 +134,7 @@ def claims():
             paid_rate=paid_rate,
             total_claims=f"{total_claims:,}",
             paid_claims=f"{paid_claims:,}",
+            has_data=has_data,
             chart1_json=chart1,
             chart2_json=chart2,
             # Filter state for pre-population

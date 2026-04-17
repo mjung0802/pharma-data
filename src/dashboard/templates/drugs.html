@@ -21,6 +21,13 @@
 <!-- ------------------------------------------------------------------ -->
 {% include "_filter_bar.html" %}
 
+{% if not has_data %}
+<div style="background:#fef3c7;border:1px solid #d97706;border-radius:0.375rem;
+            padding:0.875rem 1.25rem;margin-bottom:1.5rem;color:#92400e;font-size:0.95rem;">
+  No claims found for the selected filters. Try adjusting your selection.
+</div>
+{% endif %}
+
 <!-- ------------------------------------------------------------------ -->
 <!-- KPI strip                                                            -->
 <!-- ------------------------------------------------------------------ -->
@@ -95,7 +102,7 @@
 <!-- Download link                                                        -->
 <!-- ------------------------------------------------------------------ -->
 <section>
-  <a href="/download/drugs" class="btn btn-success">Download Excel Report</a>
+  <a href="/download/drugs?{{ request.query_string.decode() }}" class="btn btn-success">Download Excel Report</a>
 </section>
 
 {% endblock %}

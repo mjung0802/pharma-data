@@ -53,12 +53,14 @@ def formulary():
         df_ofr  = run_query(q_ofr)
         df_cpt  = run_query(q_cpt)
 
+        has_data = not df_tier.empty
+
         # ------------------------------------------------------------------
         # KPI values
         # ------------------------------------------------------------------
-        generic_fill_rate = float(df_gfr["generic_fill_rate"].iloc[0])
-        on_formulary_rate = float(df_ofr["on_formulary_rate"].iloc[0])
-        total_paid_claims = int(df_ofr["total_paid_claims"].iloc[0])
+        generic_fill_rate = float(df_gfr["generic_fill_rate"].iloc[0]) if not df_gfr.empty else 0.0
+        on_formulary_rate = float(df_ofr["on_formulary_rate"].iloc[0]) if not df_ofr.empty else 0.0
+        total_paid_claims = int(df_ofr["total_paid_claims"].iloc[0]) if not df_ofr.empty else 0
 
         # ------------------------------------------------------------------
         # Chart 1 — Gross Cost by Formulary Tier (bar chart)
@@ -91,8 +93,8 @@ def formulary():
         # ------------------------------------------------------------------
         # Chart 2 — Generic vs. Brand Fill Rate (donut)
         # ------------------------------------------------------------------
-        generic_claims = int(df_gfr["generic_claims"].iloc[0])
-        brand_claims = int(df_gfr["brand_claims"].iloc[0])
+        generic_claims = int(df_gfr["generic_claims"].iloc[0]) if not df_gfr.empty else 0
+        brand_claims = int(df_gfr["brand_claims"].iloc[0]) if not df_gfr.empty else 0
 
         chart2 = {
             "data": [
@@ -159,6 +161,7 @@ def formulary():
             generic_fill_rate=generic_fill_rate,
             on_formulary_rate=on_formulary_rate,
             total_paid_claims=f"{total_paid_claims:,}",
+            has_data=has_data,
             chart1_json=chart1,
             chart2_json=chart2,
             chart3_json=chart3,

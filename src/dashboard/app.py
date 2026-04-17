@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, abort, render_template, send_file
+from flask import Flask, abort, render_template, request, send_file
 
 # Resolve the directory that contains this file so Flask can find
 # templates/ and static/ regardless of the working directory.
@@ -47,6 +47,18 @@ def create_app() -> Flask:
     app.register_blueprint(claims_bp)
     app.register_blueprint(drugs_bp)
     app.register_blueprint(formulary_bp)
+
+    @app.context_processor
+    def inject_date_bounds():
+        from src.ingestion import run_query
+        try:
+            row = run_query(
+                "SELECT MIN(service_date) AS min_date, MAX(service_date) AS max_date FROM claims"
+            ).iloc[0]
+            return {"date_min": str(row["min_date"]), "date_max": str(row["max_date"])}
+        except Exception:
+            app.logger.exception("Date bounds query failed")
+            return {"date_min": "2000-01-01", "date_max": "2099-12-31"}
 
     # ------------------------------------------------------------------
     # Landing page
@@ -96,17 +108,25 @@ def create_app() -> Flask:
         if report_name not in _VALID_REPORTS:
             abort(404)
 
+        from src.dashboard.routes._filters import _build_where
+        extra_where = _build_where(
+            request.args.get("plan", ""),
+            request.args.get("date_from", ""),
+            request.args.get("date_to", ""),
+            request.args.get("drug_type", ""),
+        )
+
         try:
             # Import here to avoid circular imports at module load time
             if report_name == "claims":
                 from src.reports.excel.claims_utilization import build_claims_report
-                output_path = build_claims_report()
+                output_path = build_claims_report(extra_where=extra_where)
             elif report_name == "drugs":
                 from src.reports.excel.drug_cost import build_drug_report
-                output_path = build_drug_report()
+                output_path = build_drug_report(extra_where=extra_where)
             else:  # formulary
                 from src.reports.excel.formulary_compliance import build_formulary_report
-                output_path = build_formulary_report()
+                output_path = build_formulary_report(extra_where=extra_where)
         except Exception:
             app.logger.exception("Report generation failed for %s", report_name)
             return "Report generation failed. Check server logs.", 500, {

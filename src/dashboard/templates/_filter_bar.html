@@ -47,7 +47,7 @@
         </label>
         <input id="date_from" type="date" name="date_from"
                value="{{ date_from }}"
-               min="2024-01-01" max="2024-12-31"
+               min="{{ date_min }}" max="{{ date_max }}"
                style="
                  padding: 0.45rem 0.65rem;
                  border: 1px solid #d1d5db;
@@ -66,7 +66,7 @@
         </label>
         <input id="date_to" type="date" name="date_to"
                value="{{ date_to }}"
-               min="2024-01-01" max="2024-12-31"
+               min="{{ date_min }}" max="{{ date_max }}"
                style="
                  padding: 0.45rem 0.65rem;
                  border: 1px solid #d1d5db;
