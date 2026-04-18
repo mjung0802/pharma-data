@@ -152,6 +152,18 @@
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.25rem;
     }
+
+    /* ------------------------------------------------------------------ */
+    /* Responsive — mobile breakpoint                                       */
+    /* ------------------------------------------------------------------ */
+    @media (max-width: 640px) {
+      .chart-grid { grid-template-columns: 1fr; }
+      .kpi-grid   { grid-template-columns: 1fr 1fr; }
+      .chart-box div[id^="chart"] { height: 260px !important; }
+      .filter-form { flex-direction: column; }
+      .filter-form select,
+      .filter-form input[type="date"] { width: 100%; }
+    }
   </style>
 </head>
 <body>

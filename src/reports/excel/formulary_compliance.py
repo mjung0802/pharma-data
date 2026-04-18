@@ -15,6 +15,7 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, Reference
+from openpyxl.chart.label import DataLabelList
 from openpyxl.styles import (
     Alignment,
     Font,
@@ -27,9 +28,17 @@ from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
     _bold_cell,
+    _get_date_range_label,
     _header_row,
     _load_queries,
     _set_col_widths,
+)
+from src.reports.excel.constants import (
+    CHART_HEIGHT_MD,
+    CHART_STYLE,
+    CHART_WIDTH_SM,
+    COLOR_RED_LIGHT,
+    FMT_CURRENCY,
 )
 
 # ---------------------------------------------------------------------------
@@ -115,7 +124,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     _header_row(ws, row, tier_headers)
     row += 1
 
-    red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+    red_fill = PatternFill(start_color=COLOR_RED_LIGHT, end_color=COLOR_RED_LIGHT, fill_type="solid")
 
     tier_data_start = row
     for _, trow in df_tier.iterrows():
@@ -124,13 +133,13 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
         ws.cell(row=row, column=2, value=int(trow["claim_count"]))
 
         cell_total = ws.cell(row=row, column=3, value=float(trow["total_gross_cost"]))
-        cell_total.number_format = '"$"#,##0.00'
+        cell_total.number_format = FMT_CURRENCY
 
         cell_avg = ws.cell(row=row, column=4, value=float(trow["avg_gross_cost"]))
-        cell_avg.number_format = '"$"#,##0.00'
+        cell_avg.number_format = FMT_CURRENCY
 
         cell_copay = ws.cell(row=row, column=5, value=float(trow["avg_member_copay"]))
-        cell_copay.number_format = '"$"#,##0.00'
+        cell_copay.number_format = FMT_CURRENCY
 
         # Highlight Tier 3 rows with light red fill
         if tier_val == 3:
@@ -242,7 +251,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
         ws.column_dimensions[get_column_letter(c_idx)].width = width
 
 
-def _build_chart_sheet(wb: Workbook, df_tier: pd.DataFrame) -> None:
+def _build_chart_sheet(wb: Workbook, df_tier: pd.DataFrame, extra_where: str = "") -> None:
     """Build the Tier Chart sheet with a vertical bar chart of gross cost by tier."""
     ws = wb.create_sheet("Tier Chart")
 
@@ -256,15 +265,19 @@ def _build_chart_sheet(wb: Workbook, df_tier: pd.DataFrame) -> None:
 
     n_tiers = len(df_tier)
 
+    date_range = _get_date_range_label(extra_where)
+
     # Build vertical column chart
     chart = BarChart()
     chart.type = "col"   # "col" = vertical columns
-    chart.title = "Gross Cost by Formulary Tier (Paid Claims)"
+    chart.title = f"Gross Cost by Formulary Tier (Paid Claims){date_range}"
     chart.y_axis.title = "Total Gross Cost"
     chart.x_axis.title = "Formulary Tier"
-    chart.style = 10
-    chart.width = 18
-    chart.height = 15
+    chart.style = CHART_STYLE
+    chart.width = CHART_WIDTH_SM
+    chart.height = CHART_HEIGHT_MD
+    chart.dLbls = DataLabelList()
+    chart.dLbls.showVal = True
 
     data_ref = Reference(ws, min_col=2, min_row=1, max_row=n_tiers + 1)
     cats_ref = Reference(ws, min_col=1, min_row=2, max_row=n_tiers + 1)
@@ -301,7 +314,7 @@ def build_formulary_report(extra_where: str = "") -> str:
     _build_detail(wb, extra_where)
 
     # Sheet 3: Tier Chart
-    _build_chart_sheet(wb, df_tier)
+    _build_chart_sheet(wb, df_tier, extra_where)
 
     output_path = OUTPUT_DIR / "formulary_compliance.xlsx"
     wb.save(str(output_path))

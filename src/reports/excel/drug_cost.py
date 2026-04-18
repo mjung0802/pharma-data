@@ -15,6 +15,7 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, Reference
+from openpyxl.chart.label import DataLabelList
 from openpyxl.styles import (
     Alignment,
     Font,
@@ -27,9 +28,17 @@ from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
     _bold_cell,
+    _get_date_range_label,
     _header_row,
     _load_queries,
     _set_col_widths,
+)
+from src.reports.excel.constants import (
+    CHART_HEIGHT_LG,
+    CHART_STYLE,
+    CHART_WIDTH_LG,
+    COLOR_AMBER,
+    FMT_CURRENCY,
 )
 
 # ---------------------------------------------------------------------------
@@ -86,10 +95,10 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
         ws.cell(row=row, column=2, value=int(brow["claim_count"]))
 
         cell_total = ws.cell(row=row, column=3, value=float(brow["total_gross_cost"]))
-        cell_total.number_format = '"$"#,##0.00'
+        cell_total.number_format = FMT_CURRENCY
 
         cell_avg = ws.cell(row=row, column=4, value=float(brow["avg_gross_cost"]))
-        cell_avg.number_format = '"$"#,##0.00'
+        cell_avg.number_format = FMT_CURRENCY
 
         cell_pct = ws.cell(row=row, column=5, value=float(brow["pct_of_total_cost"]))
         cell_pct.number_format = '0.00"%"'
@@ -110,7 +119,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     _header_row(ws, row, top10_headers)
     row += 1
 
-    amber_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+    amber_fill = PatternFill(start_color=COLOR_AMBER, end_color=COLOR_AMBER, fill_type="solid")
 
     for i, (_, trow) in enumerate(df_top10.iterrows()):
         ws.cell(row=row, column=1, value=str(trow["brand_name"]))
@@ -120,10 +129,10 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
         ws.cell(row=row, column=5, value=int(trow["claim_count"]))
 
         cell_gross = ws.cell(row=row, column=6, value=float(trow["total_gross_cost"]))
-        cell_gross.number_format = '"$"#,##0.00'
+        cell_gross.number_format = FMT_CURRENCY
 
         cell_paid = ws.cell(row=row, column=7, value=float(trow["total_paid_amount"]))
-        cell_paid.number_format = '"$"#,##0.00'
+        cell_paid.number_format = FMT_CURRENCY
 
         # Highlight the top row (highest cost drug) with light amber fill
         if i == 0:
@@ -152,16 +161,16 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
         ws.cell(row=row, column=2, value=int(tcrow["claim_count"]))
 
         cell_total = ws.cell(row=row, column=3, value=float(tcrow["total_gross_cost"]))
-        cell_total.number_format = '"$"#,##0.00'
+        cell_total.number_format = FMT_CURRENCY
 
         cell_avg = ws.cell(row=row, column=4, value=float(tcrow["avg_gross_cost"]))
-        cell_avg.number_format = '"$"#,##0.00'
+        cell_avg.number_format = FMT_CURRENCY
 
         cell_brand = ws.cell(row=row, column=5, value=float(tcrow["brand_cost"]))
-        cell_brand.number_format = '"$"#,##0.00'
+        cell_brand.number_format = FMT_CURRENCY
 
         cell_generic = ws.cell(row=row, column=6, value=float(tcrow["generic_cost"]))
-        cell_generic.number_format = '"$"#,##0.00'
+        cell_generic.number_format = FMT_CURRENCY
 
         row += 1
 
@@ -173,15 +182,15 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     tc_gross = ws.cell(row=row, column=3,
                        value=f"=SUM(C{tc_data_start}:C{row - 1})")
     tc_gross.font = total_font
-    tc_gross.number_format = '"$"#,##0.00'
+    tc_gross.number_format = FMT_CURRENCY
     tc_brand = ws.cell(row=row, column=5,
                        value=f"=SUM(E{tc_data_start}:E{row - 1})")
     tc_brand.font = total_font
-    tc_brand.number_format = '"$"#,##0.00'
+    tc_brand.number_format = FMT_CURRENCY
     tc_generic = ws.cell(row=row, column=6,
                          value=f"=SUM(F{tc_data_start}:F{row - 1})")
     tc_generic.font = total_font
-    tc_generic.number_format = '"$"#,##0.00'
+    tc_generic.number_format = FMT_CURRENCY
     row += 1
 
     # Column widths
@@ -251,7 +260,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
         ws.column_dimensions[get_column_letter(c_idx)].width = width
 
 
-def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame) -> None:
+def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame, extra_where: str = "") -> None:
     """Build the Top Drugs Chart sheet with a horizontal bar chart."""
     ws = wb.create_sheet("Top Drugs Chart")
 
@@ -265,15 +274,19 @@ def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame) -> None:
 
     n_drugs = len(df_top10)
 
+    date_range = _get_date_range_label(extra_where)
+
     # Build horizontal bar chart (direction="bar" makes it horizontal)
     chart = BarChart()
     chart.type = "bar"   # "bar" = horizontal bars; "col" = vertical columns
-    chart.title = "Top 10 Drugs by Gross Cost (Paid Claims)"
+    chart.title = f"Top 10 Drugs by Gross Cost (Paid Claims){date_range}"
     chart.x_axis.title = "Gross Cost"
     chart.y_axis.title = "Drug"
-    chart.style = 10
-    chart.width = 25    # ~25 columns wide
-    chart.height = 20   # ~20 rows tall
+    chart.style = CHART_STYLE
+    chart.width = CHART_WIDTH_LG
+    chart.height = CHART_HEIGHT_LG
+    chart.dLbls = DataLabelList()
+    chart.dLbls.showVal = True
 
     data_ref = Reference(ws, min_col=2, min_row=1, max_row=n_drugs + 1)
     cats_ref = Reference(ws, min_col=1, min_row=2, max_row=n_drugs + 1)
@@ -310,7 +323,7 @@ def build_drug_report(extra_where: str = "") -> str:
     _build_detail(wb, extra_where)
 
     # Sheet 3: Top Drugs Chart
-    _build_chart_sheet(wb, df_top10)
+    _build_chart_sheet(wb, df_top10, extra_where)
 
     output_path = OUTPUT_DIR / "drug_cost.xlsx"
     wb.save(str(output_path))

@@ -32,7 +32,7 @@
 <!-- KPI strip                                                            -->
 <!-- ------------------------------------------------------------------ -->
 <section style="margin-bottom: 2.5rem;">
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+  <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
 
     <!-- Generic Fill Rate -->
     <div class="card" style="border-left: 4px solid #2ecc71;">
@@ -74,15 +74,15 @@
 <!-- Charts — row 1: Chart 1 and Chart 2 side by side                   -->
 <!-- ------------------------------------------------------------------ -->
 <section style="margin-bottom: 2.5rem;">
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem;">
+  <div class="chart-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem;">
 
     <!-- Chart 1: Gross Cost by Formulary Tier -->
-    <div class="card" style="padding: 1rem;">
+    <div class="card chart-box" style="padding: 1rem;">
       <div id="chart1" style="width: 100%; height: 380px;"></div>
     </div>
 
     <!-- Chart 2: Generic vs. Brand Fill Rate Donut -->
-    <div class="card" style="padding: 1rem;">
+    <div class="card chart-box" style="padding: 1rem;">
       <div id="chart2" style="width: 100%; height: 380px;"></div>
     </div>
 

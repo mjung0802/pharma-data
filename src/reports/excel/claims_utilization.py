@@ -15,6 +15,7 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, Reference
+from openpyxl.chart.label import DataLabelList
 from openpyxl.styles import (
     Alignment,
     Font,
@@ -27,9 +28,17 @@ from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
     _bold_cell,
+    _get_date_range_label,
     _header_row,
     _load_queries,
     _set_col_widths,
+)
+from src.reports.excel.constants import (
+    CHART_HEIGHT_MD,
+    CHART_STYLE,
+    CHART_WIDTH_MD,
+    COLOR_RED_LIGHT,
+    FMT_CURRENCY,
 )
 
 # ---------------------------------------------------------------------------
@@ -87,8 +96,8 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
          '0.00"%"'),
         ("Total Claims",    "=COUNTA(Detail!A2:A10000)",                   None),
         ("Paid Claims",     '=COUNTIF(Detail!Y2:Y10000,"Paid")',            None),
-        ("Total Gross Cost","=SUM(Detail!U2:U10000)",                       '"$"#,##0.00'),
-        ("Total Paid (Plan)","=SUM(Detail!X2:X10000)",                      '"$"#,##0.00'),
+        ("Total Gross Cost","=SUM(Detail!U2:U10000)",                       FMT_CURRENCY),
+        ("Total Paid (Plan)","=SUM(Detail!X2:X10000)",                      FMT_CURRENCY),
     ]
     for metric, value, fmt in kpis:
         ws.cell(row=row, column=1, value=metric)
@@ -108,7 +117,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     _header_row(ws, row, status_headers)
     row += 1
 
-    red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+    red_fill = PatternFill(start_color=COLOR_RED_LIGHT, end_color=COLOR_RED_LIGHT, fill_type="solid")
 
     status_data_start = row
     for _, srow in df_status.iterrows():
@@ -242,7 +251,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
         ws.column_dimensions[get_column_letter(c_idx)].width = width
 
 
-def _build_chart_sheet(wb: Workbook, df_monthly: pd.DataFrame) -> None:
+def _build_chart_sheet(wb: Workbook, df_monthly: pd.DataFrame, extra_where: str = "") -> None:
     """Build the Monthly Trend Chart sheet."""
     ws = wb.create_sheet("Monthly Trend Chart")
 
@@ -258,15 +267,19 @@ def _build_chart_sheet(wb: Workbook, df_monthly: pd.DataFrame) -> None:
 
     n_months = len(df_monthly)
 
+    date_range = _get_date_range_label(extra_where)
+
     # Build bar chart
     chart = BarChart()
     chart.type = "col"
-    chart.title = "Monthly Claim Volume"
+    chart.title = f"Monthly Claim Volume{date_range}"
     chart.y_axis.title = "Claim Count"
     chart.x_axis.title = "Month"
-    chart.style = 10
-    chart.width = 20   # ~20 columns wide
-    chart.height = 15  # ~15 rows tall
+    chart.style = CHART_STYLE
+    chart.width = CHART_WIDTH_MD
+    chart.height = CHART_HEIGHT_MD
+    chart.dLbls = DataLabelList()
+    chart.dLbls.showVal = True
 
     data_ref = Reference(ws, min_col=2, min_row=1, max_row=n_months + 1)
     cats_ref = Reference(ws, min_col=1, min_row=2, max_row=n_months + 1)
@@ -303,7 +316,7 @@ def build_claims_report(extra_where: str = "") -> str:
     _build_detail(wb, extra_where)
 
     # Sheet 3: Monthly Trend Chart
-    _build_chart_sheet(wb, df_monthly)
+    _build_chart_sheet(wb, df_monthly, extra_where)
 
     output_path = OUTPUT_DIR / "claims_utilization.xlsx"
     wb.save(str(output_path))

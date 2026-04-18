@@ -48,3 +48,14 @@ def _header_row(ws: Worksheet, row: int, headers: list[str], bold: bool = True) 
         cell = ws.cell(row=row, column=col, value=header)
         if bold:
             cell.font = Font(bold=True)
+
+
+def _get_date_range_label(extra_where: str) -> str:
+    """Return ' (YYYY-MM-DD to YYYY-MM-DD)' derived from data, or ''."""
+    from src.ingestion import run_query
+    from src.dashboard.routes._filters import _inject_filter
+    sql = "SELECT MIN(service_date) AS min_d, MAX(service_date) AS max_d FROM claims"
+    df = run_query(_inject_filter(sql, extra_where))
+    if df.empty or df.iloc[0]["min_d"] is None:
+        return ""
+    return f" ({df.iloc[0]['min_d']} to {df.iloc[0]['max_d']})"
