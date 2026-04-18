@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, request
 
 from src.reports.excel._utils import _load_queries
-from src.dashboard.routes._filters import _build_where, _inject_filter
+from src.dashboard.routes._filters import _build_where, _inject_filter, get_filter_params
 
 formulary_bp = Blueprint("formulary", __name__)
 
@@ -33,12 +33,8 @@ def formulary():
         # ------------------------------------------------------------------
         # Read filter params from query string
         # ------------------------------------------------------------------
-        plan_filter = request.args.get("plan", "")
-        date_from   = request.args.get("date_from", "")
-        date_to     = request.args.get("date_to", "")
-        drug_type   = request.args.get("drug_type", "")
-
-        extra_where = _build_where(plan_filter, date_from, date_to, drug_type)
+        params = get_filter_params(request.args)
+        extra_where = _build_where(params["plan_filter"], params["date_from"], params["date_to"], params["drug_type"])
 
         queries = _load_queries(_SQL_FILE)
 
@@ -166,10 +162,7 @@ def formulary():
             chart2_json=chart2,
             chart3_json=chart3,
             # Filter state for pre-population
-            plan_filter=plan_filter,
-            date_from=date_from,
-            date_to=date_to,
-            drug_type=drug_type,
+            **params,
         )
     except Exception:
         from flask import current_app

@@ -78,3 +78,22 @@ def _inject_filter(sql: str, extra_where: str) -> str:
 
     subquery = f"(SELECT * FROM claims WHERE 1=1{extra_where}) AS _claims_filtered"
     return re.sub(r"\bFROM\s+claims\b", f"FROM {subquery}", sql, flags=re.IGNORECASE)
+
+
+def get_filter_params(args) -> dict[str, str]:
+    """Extract the four standard filter params from request.args (or any Mapping).
+
+    Args:
+        args: A Mapping-like object (e.g., request.args or dict) that supports
+              .get(key, default) with optional second argument for default value.
+
+    Returns:
+        A dictionary with keys plan_filter, date_from, date_to, drug_type.
+        The key is plan_filter (not plan) because templates expect that name.
+    """
+    return {
+        "plan_filter": args.get("plan", ""),
+        "date_from":   args.get("date_from", ""),
+        "date_to":     args.get("date_to", ""),
+        "drug_type":   args.get("drug_type", ""),
+    }

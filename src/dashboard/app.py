@@ -108,13 +108,9 @@ def create_app() -> Flask:
         if report_name not in _VALID_REPORTS:
             abort(404)
 
-        from src.dashboard.routes._filters import _build_where
-        extra_where = _build_where(
-            request.args.get("plan", ""),
-            request.args.get("date_from", ""),
-            request.args.get("date_to", ""),
-            request.args.get("drug_type", ""),
-        )
+        from src.dashboard.routes._filters import _build_where, get_filter_params
+        params = get_filter_params(request.args)
+        extra_where = _build_where(params["plan_filter"], params["date_from"], params["date_to"], params["drug_type"])
 
         try:
             # Import here to avoid circular imports at module load time
