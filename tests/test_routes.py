@@ -64,3 +64,10 @@ class TestFormularyEmptyResult:
         with patch("src.ingestion.run_query", side_effect=_formulary_dfs()):
             resp = client.get("/formulary")
         assert resp.status_code == 200
+
+
+def test_landing_page_na_shows_styled_message(client):
+    with patch("src.ingestion.run_query", side_effect=Exception("db down")):
+        resp = client.get("/")
+    assert resp.status_code == 200
+    assert b"Data unavailable" in resp.data
