@@ -56,3 +56,20 @@ FROM claims
 WHERE claim_status = 'Paid'
 GROUP BY therapeutic_class
 ORDER BY total_gross_cost DESC;
+
+
+-- QUERY: generic_penetration
+-- Generic fill rate per therapeutic class (Paid claims only).
+SELECT
+    therapeutic_class,
+    COUNT(*)                                                                     AS total_fills,
+    SUM(CASE WHEN drug_type = 'Generic' THEN 1 ELSE 0 END)                     AS generic_fills,
+    ROUND(
+        SUM(CASE WHEN drug_type = 'Generic' THEN 1 ELSE 0 END) * 100.0
+        / NULLIF(COUNT(*), 0),
+        1
+    )                                                                            AS generic_pct
+FROM claims
+WHERE claim_status = 'Paid'
+GROUP BY therapeutic_class
+ORDER BY generic_pct DESC;

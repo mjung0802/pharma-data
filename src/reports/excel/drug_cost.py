@@ -265,6 +265,25 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
         ws.column_dimensions[get_column_letter(c_idx)].width = width
 
 
+def _build_generic_penetration(wb: Workbook, df: pd.DataFrame) -> None:
+    """Add Generic Penetration sheet with per-class generic fill rate."""
+    ws = wb.create_sheet("Generic Penetration")
+    _header_row(ws, 1, ["Therapeutic Class", "Total Fills", "Generic Fills", "Generic %"])
+    for r_idx, (_, row_data) in enumerate(df.iterrows(), start=2):
+        ws.cell(row=r_idx, column=1, value=row_data["therapeutic_class"])
+        for col, col_name, fmt in [
+            (2, "total_fills",   "0"),
+            (3, "generic_fills", "0"),
+            (4, "generic_pct",   '0.0"%"'),
+        ]:
+            cell = ws.cell(row=r_idx, column=col, value=float(row_data[col_name]))
+            cell.number_format = fmt
+            cell.alignment = Alignment(horizontal="right")
+    _set_col_widths(ws, [26, 14, 16, 12])
+    ws.auto_filter.ref = f"A1:D{len(df) + 1}"
+    ws.freeze_panes = "A2"
+
+
 def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame, extra_where: str = "") -> None:
     """Build the Top Drugs Chart sheet with a horizontal bar chart."""
     ws = wb.create_sheet("Top Drugs Chart")
@@ -329,6 +348,11 @@ def build_drug_report(extra_where: str = "") -> str:
 
     # Sheet 3: Top Drugs Chart
     _build_chart_sheet(wb, df_top10, extra_where)
+
+    # Sheet 4: Generic Penetration
+    q_penetration = queries["generic_penetration"]
+    df_penetration = run_query(_inject_filter(q_penetration, extra_where))
+    _build_generic_penetration(wb, df_penetration)
 
     # Apply print settings to all worksheets
     for ws in wb.worksheets:

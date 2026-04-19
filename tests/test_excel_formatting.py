@@ -85,3 +85,21 @@ def test_claims_summary_has_turnaround_section(tmp_path, monkeypatch):
     ws = wb["Summary"]
     cell_values = [ws.cell(row=r, column=1).value for r in range(1, ws.max_row + 1)]
     assert any("Turnaround" in str(v) for v in cell_values if v)
+
+
+def test_drug_report_has_generic_penetration_sheet(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = build_drug_report()
+    wb = load_workbook(path)
+    assert "Generic Penetration" in wb.sheetnames
+    ws = wb["Generic Penetration"]
+    assert ws.max_row > 1, "Generic Penetration sheet is empty"
+
+
+def test_generic_penetration_headers(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = build_drug_report()
+    wb = load_workbook(path)
+    ws = wb["Generic Penetration"]
+    headers = [ws.cell(row=1, column=c).value for c in range(1, 5)]
+    assert headers == ["Therapeutic Class", "Total Fills", "Generic Fills", "Generic %"]
