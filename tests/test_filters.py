@@ -8,6 +8,7 @@ from src.dashboard.routes._filters import (
     _build_where,
     _inject_filter,
     get_filter_params,
+    _mom_delta,
 )
 
 VALID_PLAN = next(iter(VALID_PLANS))
@@ -134,25 +135,21 @@ class TestGetFilterParams:
         }
 
 
-from src.dashboard.routes._filters import _mom_delta
 
+class TestMomDelta:
+    def test_mom_delta_increase(self):
+        delta, direction = _mom_delta([100, 120])
+        assert delta == 20.0
+        assert direction == "up"
 
-def test_mom_delta_increase():
-    delta, direction = _mom_delta([100, 120])
-    assert delta == 20.0
-    assert direction == "up"
+    def test_mom_delta_decrease(self):
+        delta, direction = _mom_delta([120, 60])
+        assert delta == 50.0
+        assert direction == "down"
 
+    def test_mom_delta_insufficient_data(self):
+        assert _mom_delta([100]) == (None, None)
+        assert _mom_delta([]) == (None, None)
 
-def test_mom_delta_decrease():
-    delta, direction = _mom_delta([120, 60])
-    assert delta == 50.0
-    assert direction == "down"
-
-
-def test_mom_delta_insufficient_data():
-    assert _mom_delta([100]) == (None, None)
-    assert _mom_delta([]) == (None, None)
-
-
-def test_mom_delta_zero_prev():
-    assert _mom_delta([0, 5]) == (None, None)
+    def test_mom_delta_zero_prev(self):
+        assert _mom_delta([0, 5]) == (None, None)
