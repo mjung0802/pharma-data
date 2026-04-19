@@ -43,6 +43,12 @@
       <p style="font-size: 2rem; font-weight: 700; color: #1a2744; line-height: 1.1;">
         {{ total_paid_cost }}
       </p>
+      {% if drugs_mom_delta is not none %}
+      <div style="font-size:0.85rem;margin-top:4px;
+                  color:{{ '#16a34a' if drugs_mom_dir == 'up' else '#dc2626' }};">
+        {{ '↑' if drugs_mom_dir == 'up' else '↓' }} {{ drugs_mom_delta }}% vs prev drug
+      </div>
+      {% endif %}
     </div>
 
     <!-- Top Drug by Cost -->

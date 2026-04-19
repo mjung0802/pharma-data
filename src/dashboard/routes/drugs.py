@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, request
 
 from src.reports.excel._utils import _load_queries
-from src.dashboard.routes._filters import _build_where, _inject_filter, get_filter_params
+from src.dashboard.routes._filters import _build_where, _inject_filter, get_filter_params, _mom_delta
 
 drugs_bp = Blueprint("drugs", __name__)
 
@@ -48,6 +48,13 @@ def drugs():
         df_tc  = run_query(q_tc)
 
         has_data = not df_bvg.empty
+
+        # ------------------------------------------------------------------
+        # MoM delta — no monthly time-series available for drugs. Only pages
+        # with real month-over-month queries should show trend indicators.
+        # Pass None, None so the indicator is not rendered.
+        # ------------------------------------------------------------------
+        drugs_mom_delta, drugs_mom_dir = None, None
 
         # ------------------------------------------------------------------
         # KPI values
@@ -161,6 +168,8 @@ def drugs():
             chart1_json=chart1,
             chart2_json=chart2,
             chart3_json=chart3,
+            drugs_mom_delta=drugs_mom_delta,
+            drugs_mom_dir=drugs_mom_dir,
             # Filter state for pre-population
             **params,
         )

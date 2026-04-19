@@ -80,6 +80,18 @@ def _inject_filter(sql: str, extra_where: str) -> str:
     return re.sub(r"\bFROM\s+claims\b", f"FROM {subquery}", sql, flags=re.IGNORECASE)
 
 
+def _mom_delta(series: list) -> tuple:
+    """Return (abs_delta_pct, direction) for last 2 values, or (None, None)."""
+    vals = [v for v in series if v is not None]
+    if len(vals) < 2:
+        return None, None
+    prev, curr = vals[-2], vals[-1]
+    if prev == 0:
+        return None, None
+    delta = round((curr - prev) / prev * 100, 1)
+    return abs(delta), "up" if delta >= 0 else "down"
+
+
 def get_filter_params(args) -> dict[str, str]:
     """Extract the four standard filter params from request.args (or any Mapping).
 

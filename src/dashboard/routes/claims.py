@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, request
 
 from src.reports.excel._utils import _load_queries
-from src.dashboard.routes._filters import _build_where, _inject_filter, get_filter_params
+from src.dashboard.routes._filters import _build_where, _inject_filter, get_filter_params, _mom_delta
 
 claims_bp = Blueprint("claims", __name__)
 
@@ -48,6 +48,11 @@ def claims():
         df_plan    = run_query(q_plan)
 
         has_data = not df_monthly.empty
+
+        # ------------------------------------------------------------------
+        # MoM delta (month-over-month trend)
+        # ------------------------------------------------------------------
+        claims_mom_delta, claims_mom_dir = _mom_delta(df_monthly["claim_count"].tolist())
 
         # ------------------------------------------------------------------
         # KPI values
@@ -133,6 +138,8 @@ def claims():
             has_data=has_data,
             chart1_json=chart1,
             chart2_json=chart2,
+            claims_mom_delta=claims_mom_delta,
+            claims_mom_dir=claims_mom_dir,
             # Filter state for pre-population
             **params,
         )
