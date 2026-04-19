@@ -27,6 +27,7 @@ from src.config import OUTPUT_DIR
 from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
+    _apply_print_settings,
     _bold_cell,
     _get_date_range_label,
     _header_row,
@@ -328,6 +329,10 @@ def build_drug_report(extra_where: str = "") -> str:
 
     # Sheet 3: Top Drugs Chart
     _build_chart_sheet(wb, df_top10, extra_where)
+
+    # Apply print settings to all worksheets
+    for ws in wb.worksheets:
+        _apply_print_settings(ws)
 
     output_path = OUTPUT_DIR / "drug_cost.xlsx"
     wb.save(str(output_path))

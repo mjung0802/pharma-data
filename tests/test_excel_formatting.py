@@ -66,3 +66,13 @@ def test_formulary_detail_sheet_quantity_column_right_aligned(tmp_path, monkeypa
     headers = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
     qty_col = headers.index("quantity") + 1
     assert ws.cell(row=2, column=qty_col).alignment.horizontal == "right"
+
+
+def test_claims_report_all_sheets_have_print_settings(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = build_claims_report()
+    wb = load_workbook(path)
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        assert ws.page_setup.paperSize == 1, f"{sheet_name}: expected Letter (1)"
+        assert ws.page_setup.orientation == "landscape", f"{sheet_name}: expected landscape"
