@@ -65,3 +65,25 @@ def test_bigquery_loader_raises_import_error_without_deps(monkeypatch):
     loader = m.BigQueryLoader()
     with pytest.raises(ImportError, match="google-cloud-bigquery"):
         loader.load("claims")
+
+
+def test_apply_dialect_duckdb_is_noop():
+    from src.ingestion.db import _apply_dialect
+    sql = "SELECT STRFTIME('%Y-%m', CAST(d AS DATE)) FROM t"
+    assert _apply_dialect(sql, source="duckdb") == sql
+
+
+def test_apply_dialect_bigquery_replaces_strftime():
+    from src.ingestion.db import _apply_dialect
+    sql = "SELECT STRFTIME('%Y-%m', CAST(d AS DATE)) FROM t"
+    result = _apply_dialect(sql, source="bigquery")
+    assert "FORMAT_DATE" in result
+    assert "STRFTIME" not in result
+
+
+def test_apply_dialect_bigquery_replaces_datediff():
+    from src.ingestion.db import _apply_dialect
+    sql = "SELECT DATEDIFF('day', CAST(a AS DATE), CAST(b AS DATE)) FROM t"
+    result = _apply_dialect(sql, source="bigquery")
+    assert "DATE_DIFF" in result
+    assert "DATEDIFF" not in result

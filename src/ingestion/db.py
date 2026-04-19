@@ -9,6 +9,7 @@ Switching from CSV to BigQuery requires only changing the PHARMA_DATA_SOURCE
 environment variable; no report or dashboard code needs to change.
 """
 
+import re
 import duckdb
 import pandas as pd
 
@@ -94,6 +95,25 @@ def run_query(sql: str) -> pd.DataFrame:
         return conn.execute(sql).df()
     finally:
         conn.close()
+
+
+def _apply_dialect(sql: str, source: str = "duckdb") -> str:
+    """Transform DuckDB SQL to BigQuery dialect, or return unchanged for DuckDB.
+
+    Handles the two known dialect differences in this codebase:
+      STRFTIME('%Y-%m', expr)         → FORMAT_DATE('%Y-%m', expr)
+      DATEDIFF('day', date1, date2)   → DATE_DIFF(date2, date1, DAY)
+    """
+    if source != "bigquery":
+        return sql
+    sql = re.sub(r"\bSTRFTIME\s*\(", "FORMAT_DATE(", sql, flags=re.IGNORECASE)
+    sql = re.sub(
+        r"\bDATEDIFF\s*\(\s*'day'\s*,\s*([^,]+),\s*([^)]+)\)",
+        r"DATE_DIFF(\2, \1, DAY)",
+        sql,
+        flags=re.IGNORECASE,
+    )
+    return sql
 
 
 # ---------------------------------------------------------------------------
