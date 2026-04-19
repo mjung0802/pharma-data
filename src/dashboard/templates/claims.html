@@ -43,6 +43,12 @@
       <p style="font-size: 2rem; font-weight: 700; color: #1a2744; line-height: 1.1;">
         {{ total_claims }}
       </p>
+      {% if claims_mom_delta is not none %}
+      <div style="font-size:0.85rem;margin-top:4px;
+                  color:{{ '#16a34a' if claims_mom_dir == 'up' else '#dc2626' }};">
+        {{ '↑' if claims_mom_dir == 'up' else '↓' }} {{ claims_mom_delta }}% vs last month
+      </div>
+      {% endif %}
     </div>
 
     <!-- Paid Claims -->

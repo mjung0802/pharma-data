@@ -27,6 +27,7 @@ from src.config import OUTPUT_DIR
 from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
+    _apply_print_settings,
     _bold_cell,
     _get_date_range_label,
     _header_row,
@@ -213,6 +214,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
+    numeric_cols = cost_cols | {"quantity", "days_supply", "formulary_tier"}
 
     for r_idx, (_, data_row) in enumerate(df.iterrows(), start=2):
         for c_idx, col_name in enumerate(headers, start=1):
@@ -237,6 +239,9 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
             elif col_name in cost_cols:
                 cell.number_format = currency_fmt
 
+            if col_name in numeric_cols:
+                cell.alignment = Alignment(horizontal="right")
+
     # AutoFilter covering header + all data rows
     row_count = len(df)
     last_col = get_column_letter(len(headers))
@@ -258,6 +263,25 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     for c_idx, col_name in enumerate(headers, start=1):
         width = col_widths.get(col_name, 15)
         ws.column_dimensions[get_column_letter(c_idx)].width = width
+
+
+def _build_generic_penetration(wb: Workbook, df: pd.DataFrame) -> None:
+    """Add Generic Penetration sheet with per-class generic fill rate."""
+    ws = wb.create_sheet("Generic Penetration")
+    _header_row(ws, 1, ["Therapeutic Class", "Total Fills", "Generic Fills", "Generic %"])
+    for r_idx, (_, row_data) in enumerate(df.iterrows(), start=2):
+        ws.cell(row=r_idx, column=1, value=row_data["therapeutic_class"])
+        for col, col_name, fmt in [
+            (2, "total_fills",   "0"),
+            (3, "generic_fills", "0"),
+            (4, "generic_pct",   '0.0"%"'),
+        ]:
+            cell = ws.cell(row=r_idx, column=col, value=float(row_data[col_name]))
+            cell.number_format = fmt
+            cell.alignment = Alignment(horizontal="right")
+    _set_col_widths(ws, [26, 14, 16, 12])
+    ws.auto_filter.ref = f"A1:D{len(df) + 1}"
+    ws.freeze_panes = "A2"
 
 
 def _build_chart_sheet(wb: Workbook, df_top10: pd.DataFrame, extra_where: str = "") -> None:
@@ -324,6 +348,15 @@ def build_drug_report(extra_where: str = "") -> str:
 
     # Sheet 3: Top Drugs Chart
     _build_chart_sheet(wb, df_top10, extra_where)
+
+    # Sheet 4: Generic Penetration
+    q_penetration = queries["generic_penetration"]
+    df_penetration = run_query(_inject_filter(q_penetration, extra_where))
+    _build_generic_penetration(wb, df_penetration)
+
+    # Apply print settings to all worksheets
+    for ws in wb.worksheets:
+        _apply_print_settings(ws)
 
     output_path = OUTPUT_DIR / "drug_cost.xlsx"
     wb.save(str(output_path))

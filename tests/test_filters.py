@@ -1,11 +1,14 @@
 """Unit tests for dashboard filter logic."""
 
 import pytest
+from werkzeug.datastructures import ImmutableMultiDict
 from src.dashboard.routes._filters import (
     VALID_DRUG_TYPES,
     VALID_PLANS,
     _build_where,
     _inject_filter,
+    get_filter_params,
+    _mom_delta,
 )
 
 VALID_PLAN = next(iter(VALID_PLANS))
@@ -87,3 +90,66 @@ class TestInjectFilter:
         sql = "SELECT 1 AS val"
         result = _inject_filter(sql, " AND plan_name = 'X'")
         assert result == sql
+
+
+class TestGetFilterParams:
+    def test_get_filter_params_all_fields(self):
+        args = ImmutableMultiDict([
+            ("plan", "AZ BlueCross PPO"),
+            ("date_from", "2024-01-01"),
+            ("date_to", "2024-12-31"),
+            ("drug_type", "Generic"),
+        ])
+        assert get_filter_params(args) == {
+            "plan_filter": "AZ BlueCross PPO",
+            "date_from": "2024-01-01",
+            "date_to": "2024-12-31",
+            "drug_type": "Generic",
+        }
+
+    def test_get_filter_params_defaults_to_empty(self):
+        assert get_filter_params(ImmutableMultiDict()) == {
+            "plan_filter": "", "date_from": "", "date_to": "", "drug_type": ""
+        }
+
+    def test_get_filter_params_partial_fields(self):
+        args = ImmutableMultiDict([
+            ("plan", "Cigna Connect EPO"),
+            ("date_from", "2024-06-01"),
+        ])
+        assert get_filter_params(args) == {
+            "plan_filter": "Cigna Connect EPO",
+            "date_from": "2024-06-01",
+            "date_to": "",
+            "drug_type": "",
+        }
+
+    def test_get_filter_params_with_dict(self):
+        """Test that it works with regular dict-like objects."""
+        args = {"plan": "UnitedHealth Select HMO", "date_from": "2024-03-15"}
+        assert get_filter_params(args) == {
+            "plan_filter": "UnitedHealth Select HMO",
+            "date_from": "2024-03-15",
+            "date_to": "",
+            "drug_type": "",
+        }
+
+
+
+class TestMomDelta:
+    def test_mom_delta_increase(self):
+        delta, direction = _mom_delta([100, 120])
+        assert delta == 20.0
+        assert direction == "up"
+
+    def test_mom_delta_decrease(self):
+        delta, direction = _mom_delta([120, 60])
+        assert delta == 50.0
+        assert direction == "down"
+
+    def test_mom_delta_insufficient_data(self):
+        assert _mom_delta([100]) == (None, None)
+        assert _mom_delta([]) == (None, None)
+
+    def test_mom_delta_zero_prev(self):
+        assert _mom_delta([0, 5]) == (None, None)

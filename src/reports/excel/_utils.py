@@ -9,6 +9,7 @@ from pathlib import Path
 from openpyxl.cell import Cell
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.worksheet import Worksheet
 
 
@@ -48,6 +49,20 @@ def _header_row(ws: Worksheet, row: int, headers: list[str], bold: bool = True) 
         cell = ws.cell(row=row, column=col, value=header)
         if bold:
             cell.font = Font(bold=True)
+
+
+def _apply_print_settings(ws: Worksheet) -> None:
+    """Apply Letter/landscape print settings with standard margins."""
+    ws.page_setup.paperSize = ws.PAPERSIZE_LETTER      # 1 = US Letter
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.page_margins = PageMargins(
+        left=0.5, right=0.5, top=0.75, bottom=0.75, header=0.3, footer=0.3
+    )
+    if ws.max_row and ws.max_column:
+        last_col = get_column_letter(ws.max_column)
+        ws.print_area = f"A1:{last_col}{ws.max_row}"
 
 
 def _get_date_range_label(extra_where: str) -> str:

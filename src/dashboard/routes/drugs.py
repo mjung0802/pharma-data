@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, request
 
 from src.reports.excel._utils import _load_queries
-from src.dashboard.routes._filters import _build_where, _inject_filter
+from src.dashboard.routes._filters import _build_where, _inject_filter, get_filter_params
 
 drugs_bp = Blueprint("drugs", __name__)
 
@@ -33,12 +33,8 @@ def drugs():
         # ------------------------------------------------------------------
         # Read filter params from query string
         # ------------------------------------------------------------------
-        plan_filter = request.args.get("plan", "")
-        date_from   = request.args.get("date_from", "")
-        date_to     = request.args.get("date_to", "")
-        drug_type   = request.args.get("drug_type", "")
-
-        extra_where = _build_where(plan_filter, date_from, date_to, drug_type)
+        params = get_filter_params(request.args)
+        extra_where = _build_where(params["plan_filter"], params["date_from"], params["date_to"], params["drug_type"])
 
         queries = _load_queries(_SQL_FILE)
 
@@ -52,6 +48,13 @@ def drugs():
         df_tc  = run_query(q_tc)
 
         has_data = not df_bvg.empty
+
+        # ------------------------------------------------------------------
+        # MoM delta — no monthly time-series available for drugs. Only pages
+        # with real month-over-month queries should show trend indicators.
+        # Pass None, None so the indicator is not rendered.
+        # ------------------------------------------------------------------
+        drugs_mom_delta, drugs_mom_dir = None, None
 
         # ------------------------------------------------------------------
         # KPI values
@@ -165,11 +168,10 @@ def drugs():
             chart1_json=chart1,
             chart2_json=chart2,
             chart3_json=chart3,
+            drugs_mom_delta=drugs_mom_delta,
+            drugs_mom_dir=drugs_mom_dir,
             # Filter state for pre-population
-            plan_filter=plan_filter,
-            date_from=date_from,
-            date_to=date_to,
-            drug_type=drug_type,
+            **params,
         )
     except Exception:
         from flask import current_app

@@ -27,6 +27,7 @@ from src.config import OUTPUT_DIR
 from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
+    _apply_print_settings,
     _bold_cell,
     _get_date_range_label,
     _header_row,
@@ -60,6 +61,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     # Run queries (apply optional filter from dashboard)
     df_status = run_query(_inject_filter(queries["status_summary"], extra_where))
     df_monthly = run_query(_inject_filter(queries["monthly_trend"], extra_where))
+    df_turnaround = run_query(_inject_filter(queries["turnaround_stats"], extra_where))
 
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -182,6 +184,25 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
             value=f"=SUM(E{trend_data_start}:E{row - 1})").font = total_font
     row += 1
 
+    # Blank separator
+    row += 1
+
+    # ---- Claim Turnaround Time -------------------------------------------------
+    _bold_cell(ws, row, 1, "Claim Turnaround Time (days)", size=12)
+    row += 1
+
+    _header_row(ws, row, ["Metric", "Days"])
+    row += 1
+
+    if not df_turnaround.empty:
+        r = df_turnaround.iloc[0]
+        for label, val in [("Min", r["min_days"]), ("Avg", r["avg_days"]), ("Max", r["max_days"])]:
+            ws.cell(row=row, column=1, value=label)
+            num_cell = ws.cell(row=row, column=2, value=float(val) if val is not None else None)
+            num_cell.number_format = "0.0"
+            num_cell.alignment = Alignment(horizontal="right")
+            row += 1
+
     # Column widths
     _set_col_widths(ws, [28, 16, 18, 18, 16])
 
@@ -203,6 +224,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
+    numeric_cols = cost_cols | {"quantity", "days_supply", "formulary_tier"}
 
     # Write data rows
     for r_idx, (_, data_row) in enumerate(df.iterrows(), start=2):
@@ -229,6 +251,9 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
                 cell.number_format = date_fmt
             elif col_name in cost_cols:
                 cell.number_format = currency_fmt
+
+            if col_name in numeric_cols:
+                cell.alignment = Alignment(horizontal="right")
 
     # AutoFilter covering header + all data rows
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{len(df) + 1}"
@@ -317,6 +342,10 @@ def build_claims_report(extra_where: str = "") -> str:
 
     # Sheet 3: Monthly Trend Chart
     _build_chart_sheet(wb, df_monthly, extra_where)
+
+    # Apply print settings to all worksheets
+    for ws in wb.worksheets:
+        _apply_print_settings(ws)
 
     output_path = OUTPUT_DIR / "claims_utilization.xlsx"
     wb.save(str(output_path))

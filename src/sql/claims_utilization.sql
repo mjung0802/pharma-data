@@ -71,3 +71,16 @@ SELECT
 FROM claims
 GROUP BY plan_name
 ORDER BY claim_count DESC;
+
+
+-- QUERY: turnaround_stats
+-- Min, avg, max calendar days from service_date to paid_date (Paid claims only).
+-- NOTE: DATEDIFF is DuckDB syntax. BigQuery equivalent: DATE_DIFF(paid_date, service_date, DAY)
+SELECT
+    MIN(DATEDIFF('day', CAST(service_date AS DATE), CAST(paid_date AS DATE))) AS min_days,
+    ROUND(AVG(DATEDIFF('day', CAST(service_date AS DATE), CAST(paid_date AS DATE))), 1) AS avg_days,
+    MAX(DATEDIFF('day', CAST(service_date AS DATE), CAST(paid_date AS DATE))) AS max_days
+FROM claims
+WHERE claim_status = 'Paid'
+  AND paid_date IS NOT NULL
+  AND paid_date != '';

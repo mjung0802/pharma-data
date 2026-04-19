@@ -56,14 +56,29 @@ class TestCSVLoaderValidation:
             self.loader.load("bad/../table")
 
 
+class TestGeoData:
+    """Members and pharmacies should span multiple US states."""
+
+    def test_members_have_multiple_states(self):
+        df = CSVLoader().load("members")
+        states = df["state"].unique().tolist()
+        assert len(states) > 1, f"Expected multiple states, got: {states}"
+
+    def test_pharmacies_have_multiple_states(self):
+        df = CSVLoader().load("pharmacies")
+        state_col = [c for c in df.columns if "state" in c.lower()][0]
+        states = df[state_col].unique().tolist()
+        assert len(states) > 1, f"Expected multiple states, got: {states}"
+
+
 class TestTier2Data:
+    """Tier 2 preferred-brand drugs and claims must be present in the mock data."""
+
     def test_drugs_include_tier_2(self):
-        from src.ingestion.csv_loader import CSVLoader
         df = CSVLoader().load("drugs")
         assert 2 in df["formulary_tier"].tolist(), \
             f"Expected Tier 2 drugs; found tiers: {sorted(df['formulary_tier'].unique())}"
 
     def test_claims_include_tier_2_drugs(self):
-        from src.ingestion import run_query
         n = int(run_query("SELECT COUNT(*) AS n FROM claims WHERE formulary_tier = 2")["n"].iloc[0])
         assert n > 0, "No Tier 2 claims found"

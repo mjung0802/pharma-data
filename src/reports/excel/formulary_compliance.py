@@ -27,6 +27,7 @@ from src.config import OUTPUT_DIR
 from src.ingestion import run_query
 from src.dashboard.routes._filters import _inject_filter
 from src.reports.excel._utils import (
+    _apply_print_settings,
     _bold_cell,
     _get_date_range_label,
     _header_row,
@@ -205,6 +206,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
+    numeric_cols = cost_cols | {"quantity", "days_supply", "formulary_tier"}
 
     for r_idx, (_, data_row) in enumerate(df.iterrows(), start=2):
         for c_idx, col_name in enumerate(headers, start=1):
@@ -228,6 +230,9 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
                 cell.number_format = date_fmt
             elif col_name in cost_cols:
                 cell.number_format = currency_fmt
+
+            if col_name in numeric_cols:
+                cell.alignment = Alignment(horizontal="right")
 
     # AutoFilter covering header + all data rows
     last_col = get_column_letter(len(headers))
@@ -315,6 +320,10 @@ def build_formulary_report(extra_where: str = "") -> str:
 
     # Sheet 3: Tier Chart
     _build_chart_sheet(wb, df_tier, extra_where)
+
+    # Apply print settings to all worksheets
+    for ws in wb.worksheets:
+        _apply_print_settings(ws)
 
     output_path = OUTPUT_DIR / "formulary_compliance.xlsx"
     wb.save(str(output_path))

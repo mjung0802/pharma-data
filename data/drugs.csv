@@ -1,37 +1,37 @@
 ndc,brand_name,generic_name,therapeutic_class,strength,drug_type,formulary_tier,unit_cost
-00071015523,Lipitor,Atorvastatin,Cardiovascular,10,Brand,3,180.0
-00006007531,Crestor,Rosuvastatin,Cardiovascular,10,Brand,3,210.0
-00378395905,Atorvastatin,Atorvastatin,Cardiovascular,10,Generic,1,18.0
-00093505498,Lisinopril,Lisinopril,Cardiovascular,30,Generic,1,12.0
-00378181710,Metoprolol,Metoprolol,Cardiovascular,25,Generic,1,14.0
-00071020923,Norvasc,Amlodipine,Cardiovascular,5,Brand,3,145.0
-00002771759,Trulicity,Dulaglutide,Diabetes,0.75,Brand,3,880.0
-00169368812,Ozempic,Semaglutide,Diabetes,0.5,Brand,3,920.0
-00087006001,Jardiance,Empagliflozin,Diabetes,10,Brand,3,530.0
-00378718805,Metformin,Metformin,Diabetes,500,Generic,1,9.0
-00002771559,Insulin Glargine,Insulin Glargine,Diabetes,100,Brand,3,340.0
-00093752001,Glipizide,Glipizide,Diabetes,5,Generic,1,11.0
-00003149821,Abilify,Aripiprazole,Mental Health,10,Brand,3,780.0
-00456200030,Trintellix,Vortioxetine,Mental Health,10,Brand,3,410.0
-00378200010,Sertraline,Sertraline,Mental Health,50,Generic,1,14.0
-00093082805,Escitalopram,Escitalopram,Mental Health,10,Generic,1,16.0
-00378271005,Bupropion,Bupropion,Mental Health,150,Generic,1,22.0
-00002797359,Strattera,Atomoxetine,Mental Health,40,Brand,3,290.0
-00173069700,Advair Diskus,Fluticasone/Salm,Respiratory,250,Brand,3,390.0
-00173071500,Breo Ellipta,Fluticasone/Vilant,Respiratory,100,Brand,3,310.0
-00085001401,Symbicort,Budesonide/Form,Respiratory,80,Brand,3,360.0
-00093316856,Montelukast,Montelukast,Respiratory,10,Generic,1,18.0
-00378277205,Albuterol,Albuterol,Respiratory,90,Generic,1,28.0
-00025188905,Celebrex,Celecoxib,Pain / Inflammation,200,Brand,3,230.0
-00378221910,Naproxen,Naproxen,Pain / Inflammation,500,Generic,1,12.0
-00591054610,Ibuprofen,Ibuprofen,Pain / Inflammation,800,Generic,1,9.0
-00406051201,Oxycodone,Oxycodone,Pain / Inflammation,5,Generic,1,42.0
-00172392860,Gabapentin,Gabapentin,Pain / Inflammation,300,Generic,1,19.0
-00093083705,Cyclobenzaprine,Cyclobenzaprine,Pain / Inflammation,5,Generic,1,15.0
-59148006101,Ibrance,Palbociclib,Oncology,125,Brand,3,13800.0
-00378621294,Imatinib,Imatinib,Oncology,400,Generic,1,420.0
-00069014001,Sutent,Sunitinib,Oncology,50,Brand,3,14200.0
-00310019060,Tagrisso,Osimertinib,Oncology,80,Brand,3,18500.0
+71015523,Lipitor,Atorvastatin,Cardiovascular,10.0,Brand,3,180.0
+6007531,Crestor,Rosuvastatin,Cardiovascular,10.0,Brand,3,210.0
+378395905,Atorvastatin,Atorvastatin,Cardiovascular,10.0,Generic,1,18.0
+93505498,Lisinopril,Lisinopril,Cardiovascular,30.0,Generic,1,12.0
+378181710,Metoprolol,Metoprolol,Cardiovascular,25.0,Generic,1,14.0
+71020923,Norvasc,Amlodipine,Cardiovascular,5.0,Brand,3,145.0
+2771759,Trulicity,Dulaglutide,Diabetes,0.75,Brand,3,880.0
+169368812,Ozempic,Semaglutide,Diabetes,0.5,Brand,3,920.0
+87006001,Jardiance,Empagliflozin,Diabetes,10.0,Brand,3,530.0
+378718805,Metformin,Metformin,Diabetes,500.0,Generic,1,9.0
+2771559,Insulin Glargine,Insulin Glargine,Diabetes,100.0,Brand,3,340.0
+93752001,Glipizide,Glipizide,Diabetes,5.0,Generic,1,11.0
+3149821,Abilify,Aripiprazole,Mental Health,10.0,Brand,3,780.0
+456200030,Trintellix,Vortioxetine,Mental Health,10.0,Brand,3,410.0
+378200010,Sertraline,Sertraline,Mental Health,50.0,Generic,1,14.0
+93082805,Escitalopram,Escitalopram,Mental Health,10.0,Generic,1,16.0
+378271005,Bupropion,Bupropion,Mental Health,150.0,Generic,1,22.0
+2797359,Strattera,Atomoxetine,Mental Health,40.0,Brand,3,290.0
+173069700,Advair Diskus,Fluticasone/Salm,Respiratory,250.0,Brand,3,390.0
+173071500,Breo Ellipta,Fluticasone/Vilant,Respiratory,100.0,Brand,3,310.0
+85001401,Symbicort,Budesonide/Form,Respiratory,80.0,Brand,3,360.0
+93316856,Montelukast,Montelukast,Respiratory,10.0,Generic,1,18.0
+378277205,Albuterol,Albuterol,Respiratory,90.0,Generic,1,28.0
+25188905,Celebrex,Celecoxib,Pain / Inflammation,200.0,Brand,3,230.0
+378221910,Naproxen,Naproxen,Pain / Inflammation,500.0,Generic,1,12.0
+591054610,Ibuprofen,Ibuprofen,Pain / Inflammation,800.0,Generic,1,9.0
+406051201,Oxycodone,Oxycodone,Pain / Inflammation,5.0,Generic,1,42.0
+172392860,Gabapentin,Gabapentin,Pain / Inflammation,300.0,Generic,1,19.0
+93083705,Cyclobenzaprine,Cyclobenzaprine,Pain / Inflammation,5.0,Generic,1,15.0
+59148006101,Ibrance,Palbociclib,Oncology,125.0,Brand,3,13800.0
+378621294,Imatinib,Imatinib,Oncology,400.0,Generic,1,420.0
+69014001,Sutent,Sunitinib,Oncology,50.0,Brand,3,14200.0
+310019060,Tagrisso,Osimertinib,Oncology,80.0,Brand,3,18500.0
 00071044023,Glucophage XR,Metformin ER,Endocrine,500,Brand,2,45.0
 00049290077,Zoloft,Sertraline,Psychotherapy,50,Brand,2,85.0
 00069152041,Norvasc,Amlodipine,Cardiovascular,5,Brand,2,62.0
