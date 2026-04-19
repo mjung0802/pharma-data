@@ -87,3 +87,5 @@ def test_apply_dialect_bigquery_replaces_datediff():
     result = _apply_dialect(sql, source="bigquery")
     assert "DATE_DIFF" in result
     assert "DATEDIFF" not in result
+    # Verify argument order is swapped: DATE_DIFF(date2, date1, DAY)
+    assert "DATE_DIFF(CAST(b AS DATE), CAST(a AS DATE), DAY)" in result

@@ -108,7 +108,7 @@ def _apply_dialect(sql: str, source: str = "duckdb") -> str:
         return sql
     sql = re.sub(r"\bSTRFTIME\s*\(", "FORMAT_DATE(", sql, flags=re.IGNORECASE)
     sql = re.sub(
-        r"\bDATEDIFF\s*\(\s*'day'\s*,\s*([^,]+),\s*([^)]+)\)",
+        r"\bDATEDIFF\s*\(\s*'day'\s*,\s*([^,]+),\s*((?:[^)(]|\([^)]*\))*)\s*\)",
         r"DATE_DIFF(\2, \1, DAY)",
         sql,
         flags=re.IGNORECASE,
