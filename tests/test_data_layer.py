@@ -54,3 +54,18 @@ class TestCSVLoaderValidation:
     def test_path_traversal_raises_value_error(self):
         with pytest.raises(ValueError):
             self.loader.load("bad/../table")
+
+
+class TestGeoData:
+    """Members and pharmacies should span multiple US states."""
+
+    def test_members_have_multiple_states(self):
+        df = CSVLoader().load("members")
+        states = df["state"].unique().tolist()
+        assert len(states) > 1, f"Expected multiple states, got: {states}"
+
+    def test_pharmacies_have_multiple_states(self):
+        df = CSVLoader().load("pharmacies")
+        state_col = [c for c in df.columns if "state" in c.lower()][0]
+        states = df[state_col].unique().tolist()
+        assert len(states) > 1, f"Expected multiple states, got: {states}"
