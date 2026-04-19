@@ -203,6 +203,7 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
     currency_fmt = '"$"#,##0.00'
     date_cols = {"service_date", "paid_date"}
     cost_cols = {"gross_cost", "member_copay", "plan_paid", "total_paid"}
+    numeric_cols = cost_cols | {"quantity", "days_supply", "formulary_tier"}
 
     # Write data rows
     for r_idx, (_, data_row) in enumerate(df.iterrows(), start=2):
@@ -229,6 +230,9 @@ def _build_detail(wb: Workbook, extra_where: str = "") -> None:
                 cell.number_format = date_fmt
             elif col_name in cost_cols:
                 cell.number_format = currency_fmt
+
+            if col_name in numeric_cols:
+                cell.alignment = Alignment(horizontal="right")
 
     # AutoFilter covering header + all data rows
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{len(df) + 1}"
