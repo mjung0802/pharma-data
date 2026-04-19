@@ -61,6 +61,7 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     # Run queries (apply optional filter from dashboard)
     df_status = run_query(_inject_filter(queries["status_summary"], extra_where))
     df_monthly = run_query(_inject_filter(queries["monthly_trend"], extra_where))
+    df_turnaround = run_query(_inject_filter(queries["turnaround_stats"], extra_where))
 
     today_str = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -182,6 +183,25 @@ def _build_summary(wb: Workbook, queries: dict[str, str], extra_where: str = "")
     ws.cell(row=row, column=5,
             value=f"=SUM(E{trend_data_start}:E{row - 1})").font = total_font
     row += 1
+
+    # Blank separator
+    row += 1
+
+    # ---- Claim Turnaround Time -------------------------------------------------
+    _bold_cell(ws, row, 1, "Claim Turnaround Time (days)", size=12)
+    row += 1
+
+    _header_row(ws, row, ["Metric", "Days"])
+    row += 1
+
+    if not df_turnaround.empty:
+        r = df_turnaround.iloc[0]
+        for label, val in [("Min", r["min_days"]), ("Avg", r["avg_days"]), ("Max", r["max_days"])]:
+            ws.cell(row=row, column=1, value=label)
+            num_cell = ws.cell(row=row, column=2, value=float(val) if val is not None else None)
+            num_cell.number_format = "0.0"
+            num_cell.alignment = Alignment(horizontal="right")
+            row += 1
 
     # Column widths
     _set_col_widths(ws, [28, 16, 18, 18, 16])

@@ -76,3 +76,12 @@ def test_claims_report_all_sheets_have_print_settings(tmp_path, monkeypatch):
         ws = wb[sheet_name]
         assert ws.page_setup.paperSize == 1, f"{sheet_name}: expected Letter (1)"
         assert ws.page_setup.orientation == "landscape", f"{sheet_name}: expected landscape"
+
+
+def test_claims_summary_has_turnaround_section(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = build_claims_report()
+    wb = load_workbook(path)
+    ws = wb["Summary"]
+    cell_values = [ws.cell(row=r, column=1).value for r in range(1, ws.max_row + 1)]
+    assert any("Turnaround" in str(v) for v in cell_values if v)
