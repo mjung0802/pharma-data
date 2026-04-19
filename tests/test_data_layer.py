@@ -38,7 +38,7 @@ class TestRunQuery:
         df = run_query("SELECT COUNT(*) as n FROM claims")
         assert isinstance(df, pd.DataFrame)
         assert "n" in df.columns
-        assert int(df["n"].iloc[0]) == 800
+        assert int(df["n"].iloc[0]) == 840
 
 
 class TestCSVLoaderValidation:
@@ -54,3 +54,16 @@ class TestCSVLoaderValidation:
     def test_path_traversal_raises_value_error(self):
         with pytest.raises(ValueError):
             self.loader.load("bad/../table")
+
+
+class TestTier2Data:
+    def test_drugs_include_tier_2(self):
+        from src.ingestion.csv_loader import CSVLoader
+        df = CSVLoader().load("drugs")
+        assert 2 in df["formulary_tier"].tolist(), \
+            f"Expected Tier 2 drugs; found tiers: {sorted(df['formulary_tier'].unique())}"
+
+    def test_claims_include_tier_2_drugs(self):
+        from src.ingestion import run_query
+        n = int(run_query("SELECT COUNT(*) AS n FROM claims WHERE formulary_tier = 2")["n"].iloc[0])
+        assert n > 0, "No Tier 2 claims found"

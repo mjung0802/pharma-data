@@ -32,3 +32,7 @@ ndc,brand_name,generic_name,therapeutic_class,strength,drug_type,formulary_tier,
 00378621294,Imatinib,Imatinib,Oncology,400,Generic,1,420.0
 00069014001,Sutent,Sunitinib,Oncology,50,Brand,3,14200.0
 00310019060,Tagrisso,Osimertinib,Oncology,80,Brand,3,18500.0
+00071044023,Glucophage XR,Metformin ER,Endocrine,500,Brand,2,45.0
+00049290077,Zoloft,Sertraline,Psychotherapy,50,Brand,2,85.0
+00069152041,Norvasc,Amlodipine,Cardiovascular,5,Brand,2,62.0
+00006077256,Januvia,Sitagliptin,Endocrine,100,Brand,2,140.0

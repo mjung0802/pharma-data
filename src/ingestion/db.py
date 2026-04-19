@@ -87,7 +87,7 @@ def run_query(sql: str) -> pd.DataFrame:
     >>> df = run_query("SELECT COUNT(*) AS n FROM claims")
     >>> print(df)
          n
-    0  800
+    0  840
     """
     conn = get_engine()
     try:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     result = run_query("SELECT COUNT(*) AS n FROM claims")
     print(result)
 
-    expected = 800
+    expected = 840
     actual = int(result["n"].iloc[0])
     if actual == expected:
         print(f"\nPASSED — claims row count is {actual} as expected.")
